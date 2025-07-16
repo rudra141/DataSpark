@@ -1,22 +1,29 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import { generateFormula, type GenerateFormulaOutput } from "@/ai/flows/generate-formula";
 import { explainFormula } from "@/ai/flows/explain-formula";
 import { enhancePrompt } from "@/ai/flows/enhance-prompt";
+import { getUserCredits, deductUserCredits } from "@/lib/credits";
+import { createRazorpayOrder } from "@/lib/razorpay";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles, Wand2, Terminal, Lightbulb, Bot } from "lucide-react";
+import { Loader2, Sparkles, Wand2, Terminal, Lightbulb, Bot, Zap } from "lucide-react";
 import { CopyButton } from "@/components/copy-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AnimatePresence, motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { Header } from "@/components/header";
+import { useToast } from "@/hooks/use-toast";
 
 type FormulaType = "Excel" | "Google Sheets";
+
+declare const Razorpay: any;
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -48,6 +55,24 @@ export default function FormulaPage() {
   const [isExplaining, setIsExplaining] = useState<FormulaType | null>(null);
   const [explanation, setExplanation] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [credits, setCredits] = useState(0);
+  const [hasPro, setHasPro] = useState(false);
+  const [isPaying, setIsPaying] = useState(false);
+  
+  const { user } = useUser();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchCredits = async () => {
+      if (user) {
+        const { credits, hasPro } = await getUserCredits();
+        setCredits(credits);
+        setHasPro(hasPro);
+      }
+    };
+    fetchCredits();
+  }, [user]);
 
   const handleEnhancePrompt = async () => {
     if (!description.trim()) return;
@@ -86,6 +111,62 @@ export default function FormulaPage() {
       console.error(err);
     }
   };
+  
+  const handlePayment = async () => {
+    if (!user) {
+        setError("You must be logged in to make a purchase.");
+        return;
+    }
+    setIsPaying(true);
+
+    try {
+        const order = await createRazorpayOrder(19, user.id);
+        
+        const options = {
+            key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+            amount: order.amount,
+            currency: order.currency,
+            name: "FormulaFlow",
+            description: "One-Time Generation Credits",
+            order_id: order.id,
+            handler: async function (response: any) {
+                // This is a simplified handler. In a real app, you'd verify the payment signature on the backend.
+                await fetch('/api/payment-verification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_signature: response.razorpay_signature,
+                        userId: user.id
+                    })
+                });
+
+                toast({
+                    title: "Payment Successful!",
+                    description: "You now have unlimited generations.",
+                });
+                setHasPro(true);
+            },
+            prefill: {
+                name: user.fullName || "",
+                email: user.primaryEmailAddress?.emailAddress || "",
+            },
+            theme: {
+                color: "#8A2BE2"
+            }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+
+    } catch (err) {
+        setError("Payment failed. Please try again.");
+        console.error(err);
+    } finally {
+        setIsPaying(false);
+    }
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,10 +182,18 @@ export default function FormulaPage() {
     setIsExplaining(null);
 
     try {
+      if (!hasPro) {
+        await deductUserCredits(1);
+        setCredits(prev => prev - 1);
+      }
       const output = await generateFormula({ description });
       setResult(output);
-    } catch (err) {
-      setError("An error occurred while generating the formula. Please try again later.");
+    } catch (err: any) {
+      if (err.message.includes('Insufficient credits')) {
+        setError("You've run out of free credits. Please upgrade to continue.");
+      } else {
+        setError("An error occurred while generating the formula. Please try again later.");
+      }
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -130,16 +219,24 @@ export default function FormulaPage() {
 
   return (
     <div className="min-h-screen w-full bg-background bg-gradient-to-br from-background via-card to-secondary/10">
+      <Header />
       <main className="container mx-auto flex flex-col items-center p-4 sm:p-8">
         <div className="w-full max-w-4xl space-y-12">
           <div className="scroll-mt-20">
             <Card className="shadow-2xl shadow-primary/10 overflow-hidden border-primary/20 bg-card/50 backdrop-blur-sm">
               <form onSubmit={handleSubmit}>
                 <CardHeader>
-                  <CardTitle className="font-headline flex items-center gap-2 text-2xl">
-                    <Wand2 className="h-6 w-6 text-primary" />
-                    Describe Your Calculation
-                  </CardTitle>
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="font-headline flex items-center gap-2 text-2xl">
+                      <Wand2 className="h-6 w-6 text-primary" />
+                      Describe Your Calculation
+                    </CardTitle>
+                    {user && (
+                      <Badge variant={hasPro || credits > 0 ? "secondary" : "destructive"}>
+                        {hasPro ? "Pro Member" : `${credits} Credits Left`}
+                      </Badge>
+                    )}
+                  </div>
                   <CardDescription>
                     Enter a plain English description of what you want to calculate. The more specific, the better!
                   </CardDescription>
@@ -173,14 +270,25 @@ export default function FormulaPage() {
                   </AnimatePresence>
                 </CardContent>
                 <CardFooter className="bg-muted/30 px-6 py-4">
-                  <Button type="submit" disabled={isLoading || isEnhancing} className="w-full sm:w-auto ml-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20">
-                    {isLoading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="mr-2 h-4 w-4" />
-                    )}
-                    {isLoading ? "Generating..." : "Generate Formula"}
-                  </Button>
+                  {hasPro || credits > 0 ? (
+                     <Button type="submit" disabled={isLoading || isEnhancing} className="w-full sm:w-auto ml-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20">
+                        {isLoading ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="mr-2 h-4 w-4" />
+                        )}
+                        {isLoading ? "Generating..." : "Generate Formula"}
+                      </Button>
+                  ) : (
+                     <Button id="payButton" type="button" onClick={handlePayment} disabled={isPaying} className="w-full sm:w-auto ml-auto bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-500/20">
+                        {isPaying ? (
+                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                           <Zap className="mr-2 h-4 w-4" />
+                        )}
+                        Buy Credits (₹19)
+                     </Button>
+                  )}
                 </CardFooter>
               </form>
             </Card>
