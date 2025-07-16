@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUser, RedirectToSignIn } from "@clerk/nextjs";
 import { generateFormula, type GenerateFormulaOutput } from "@/ai/flows/generate-formula";
 import { explainFormula } from "@/ai/flows/explain-formula";
 import { enhancePrompt } from "@/ai/flows/enhance-prompt";
@@ -60,7 +60,7 @@ export default function FormulaPage() {
   const [hasPro, setHasPro] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
   
-  const { user } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -216,6 +216,15 @@ export default function FormulaPage() {
       </div>
     </div>
   );
+
+  if (!isLoaded) {
+    return <div className="min-h-screen w-full flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+
+  if (!isSignedIn) {
+    return <RedirectToSignIn />;
+  }
+
 
   return (
     <div className="min-h-screen w-full bg-background bg-gradient-to-br from-background via-card to-secondary/10">
