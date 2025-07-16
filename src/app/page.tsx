@@ -17,6 +17,28 @@ import { Badge } from "@/components/ui/badge";
 
 type FormulaType = "Excel" | "Google Sheets";
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut",
+    },
+  },
+};
+
 export default function Home() {
   const [description, setDescription] = useState("");
   const [result, setResult] = useState<GenerateFormulaOutput | null>(null);
@@ -51,7 +73,6 @@ export default function Home() {
     if (!result) return;
     const formula = formulaType === "Excel" ? result.excelFormula : result.googleSheetsFormula;
     
-    // If already explaining this one, hide it.
     if (isExplaining === formulaType) {
       setIsExplaining(null);
       setExplanation(null);
@@ -59,7 +80,7 @@ export default function Home() {
     }
 
     setIsExplaining(formulaType);
-    setExplanation(null); // Clear previous explanation
+    setExplanation(null); 
     setError(null);
 
     try {
@@ -68,8 +89,6 @@ export default function Home() {
     } catch (err) {
       setError(`An error occurred while explaining the ${formulaType} formula.`);
       console.error(err);
-    } finally {
-      // Keep loading state until explanation is set, but this logic is now handled by the presence of `explanation` state.
     }
   };
 
@@ -119,17 +138,30 @@ export default function Home() {
     <div className="min-h-screen w-full bg-background">
        <main className="container mx-auto flex flex-col items-center p-4 sm:p-8">
          <div className="w-full max-w-4xl space-y-12">
-           <section className="text-center min-h-[calc(100vh-200px)] flex flex-col justify-center items-center">
-             <h1 className="font-headline text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-primary via-fuchsia-500 to-orange-400">
+           <motion.section 
+             className="text-center min-h-[calc(100vh-200px)] flex flex-col justify-center items-center"
+             variants={containerVariants}
+             initial="hidden"
+             animate="visible"
+           >
+             <motion.h1 
+               className="font-headline text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-primary via-fuchsia-500 to-orange-400"
+               variants={itemVariants}
+             >
                Convert English to Excel Formulas Instantly
-             </h1>
-             <p className="mt-6 text-xl text-muted-foreground">
+             </motion.h1>
+             <motion.p 
+               className="mt-6 text-xl text-muted-foreground"
+               variants={itemVariants}
+             >
                Stop Googling. Start Copy-Pasting.
-             </p>
-             <Button size="lg" className="mt-10 animate-pulse" onClick={handleScrollToForm}>
-               Try It Free <ArrowDown className="ml-2 h-5 w-5"/>
-             </Button>
-           </section>
+             </motion.p>
+             <motion.div variants={itemVariants}>
+               <Button size="lg" className="mt-10 animate-pulse" onClick={handleScrollToForm}>
+                 Try It Free <ArrowDown className="ml-2 h-5 w-5"/>
+               </Button>
+             </motion.div>
+           </motion.section>
 
           <div ref={formRef} className="scroll-mt-20">
             <Card className="shadow-2xl shadow-primary/10 overflow-hidden border-primary/20 bg-card/50 backdrop-blur-sm">
@@ -203,46 +235,49 @@ export default function Home() {
             {result && (
               <motion.div 
                 className="space-y-8"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+                initial="hidden"
+                animate="visible"
+                variants={containerVariants}
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-6" variants={containerVariants}>
                   {(["Excel", "Google Sheets"] as const).map((type) => (
-                    <Card key={type}>
-                      <CardHeader>
-                        <CardTitle className="font-headline flex items-center justify-between">
-                          {type} Formula
-                          <Badge variant="secondary">{type === "Excel" ? "XLSX" : "G-Sheet"}</Badge>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center space-x-2">
-                          <Input
-                            id={`${type}-formula`}
-                            value={type === "Excel" ? result.excelFormula : result.googleSheetsFormula}
-                            readOnly
-                            className="font-code text-sm"
-                          />
-                          <CopyButton textToCopy={type === "Excel" ? result.excelFormula : result.googleSheetsFormula} />
-                        </div>
-                      </CardContent>
-                      <CardFooter>
-                         <Button variant="outline" size="sm" onClick={() => handleExplainFormula(type)} disabled={isExplaining === type && !explanation}>
-                           {isExplaining === type && !explanation ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
-                           {isExplaining === type ? 'Hide Explanation' : 'Explain Formula'}
-                         </Button>
-                      </CardFooter>
-                    </Card>
+                    <motion.div key={type} variants={itemVariants}>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="font-headline flex items-center justify-between">
+                            {type} Formula
+                            <Badge variant="secondary">{type === "Excel" ? "XLSX" : "G-Sheet"}</Badge>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center space-x-2">
+                            <Input
+                              id={`${type}-formula`}
+                              value={type === "Excel" ? result.excelFormula : result.googleSheetsFormula}
+                              readOnly
+                              className="font-code text-sm"
+                            />
+                            <CopyButton textToCopy={type === "Excel" ? result.excelFormula : result.googleSheetsFormula} />
+                          </div>
+                        </CardContent>
+                        <CardFooter>
+                           <Button variant="outline" size="sm" onClick={() => handleExplainFormula(type)} disabled={isExplaining === type && !explanation}>
+                             {isExplaining === type && !explanation ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
+                             {isExplaining === type ? 'Hide Explanation' : 'Explain Formula'}
+                           </Button>
+                        </CardFooter>
+                      </Card>
+                    </motion.div>
                   ))}
-                </div>
+                </motion.div>
                  
                 <AnimatePresence>
                   {isExplaining && explanation && (
                     <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
+                      initial={{ opacity: 0, y: -20, height: 0 }}
+                      animate={{ opacity: 1, y: 0, height: 'auto' }}
+                      exit={{ opacity: 0, y: -20, height: 0 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
                     >
                       <Card>
                         <CardHeader>
