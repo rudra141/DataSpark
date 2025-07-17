@@ -7,12 +7,32 @@ import { enhancePrompt } from "@/ai/flows/enhance-prompt";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles, Bot } from "lucide-react";
+import { Loader2, Sparkles, Bot, History } from "lucide-react";
 import { CopyButton } from "@/components/copy-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AnimatePresence, motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+
+const placeholderHistory = [
+  { id: 1, query: "Sum of column A if column B is 'Completed'" },
+  { id: 2, query: "Average of column C where column D is 'Sales'" },
+  { id: 3, query: "Count rows if column E is not empty" },
+];
+
 
 export default function FormulaPage() {
   const [description, setDescription] = useState("");
@@ -67,9 +87,50 @@ export default function FormulaPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-        <main className="container mx-auto p-4 sm:p-8 flex flex-col items-center">
+    <SidebarProvider>
+      <Sidebar>
+        <SidebarHeader>
+           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="h-7 w-7">
+              <Sparkles className="h-4 w-4 text-primary" />
+            </Button>
+            <div className="font-headline text-lg font-bold text-primary">FormulaFlow</div>
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+           <SidebarGroup>
+            <SidebarGroupLabel className="flex items-center gap-2">
+              <History />
+              History
+            </SidebarGroupLabel>
+            <SidebarMenu>
+              {placeholderHistory.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    className="h-auto py-1"
+                    onClick={() => setDescription(item.query)}
+                    tooltip={{
+                      children: item.query,
+                      side: "right",
+                      align: "center",
+                    }}
+                  >
+                    <span>{item.query}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        </SidebarContent>
+      </Sidebar>
+      <SidebarInset>
+         <main className="container mx-auto p-4 sm:p-8 flex flex-col items-center">
             <div className="w-full max-w-4xl space-y-8">
+               <div className="flex items-center justify-between">
+                  <h1 className="text-2xl font-bold">Formula Generator</h1>
+                  <SidebarTrigger />
+                </div>
+
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-2xl">Describe Your Calculation</CardTitle>
@@ -197,6 +258,7 @@ export default function FormulaPage() {
                 </AnimatePresence>
             </div>
         </main>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
