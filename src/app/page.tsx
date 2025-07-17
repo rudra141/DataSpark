@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowRight, Bot, Lightbulb, Zap } from "lucide-react";
 import { motion } from "framer-motion";
+import { Header } from "@/components/header";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -76,7 +77,7 @@ const testimonials = [
 export default function HomePage() {
   return (
     <div className="min-h-screen w-full bg-background text-foreground bg-gradient-to-br from-background via-card to-secondary/10">
-
+      <Header />
       <main className="container mx-auto p-4 sm:p-8">
         {/* Hero Section */}
         <motion.section
