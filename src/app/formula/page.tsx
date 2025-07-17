@@ -21,6 +21,7 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
@@ -64,8 +65,11 @@ export default function FormulaPage() {
   const addToHistory = (query: string) => {
     if (!query.trim()) return;
     const newHistoryItem = { id: short.generate(), query };
-    // Add to the top and prevent duplicates
     setHistory(prev => [newHistoryItem, ...prev.filter(item => item.query !== query)]);
+  };
+
+  const removeFromHistory = (id: string) => {
+    setHistory(prev => prev.filter(item => item.id !== id));
   };
 
   const clearHistory = () => {
@@ -137,7 +141,7 @@ export default function FormulaPage() {
             </SidebarGroupLabel>
             {history.length > 0 && (
               <SidebarGroupAction asChild>
-                <button onClick={clearHistory}>
+                <button onClick={clearHistory} title="Clear history">
                   <Trash2 />
                 </button>
               </SidebarGroupAction>
@@ -157,6 +161,16 @@ export default function FormulaPage() {
                     >
                       <span>{item.query}</span>
                     </SidebarMenuButton>
+                     <SidebarMenuAction
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFromHistory(item.id);
+                      }}
+                      showOnHover
+                      title="Delete item"
+                    >
+                      <Trash2 />
+                    </SidebarMenuAction>
                   </SidebarMenuItem>
                 ))
               ) : (
