@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowRight, Bot, Lightbulb, Zap } from "lucide-react";
 import { motion } from "framer-motion";
-import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
+import { Header } from "@/components/header";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -21,6 +21,17 @@ const containerVariants = {
 };
 
 const itemVariants = {
+  hidden: { x: -50, opacity: 0 },
+  visible: {
+    x: 0,
+    opacity: 1,
+    transition: {
+      duration: 0.6,
+      ease: "easeOut",
+    },
+  },
+};
+const itemVariantsRight = {
   hidden: { x: 50, opacity: 0 },
   visible: {
     x: 0,
@@ -75,27 +86,17 @@ const testimonials = [
 ];
 
 const CTAButton = () => (
-    <>
-        <SignedIn>
-            <Button size="lg" className="shadow-lg shadow-primary/20" asChild>
-                <Link href="/formula">
-                    Try It Free <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-            </Button>
-        </SignedIn>
-        <SignedOut>
-            <SignInButton mode="modal">
-                <Button size="lg" className="shadow-lg shadow-primary/20">
-                    Try It Free <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-            </SignInButton>
-        </SignedOut>
-    </>
+    <Button size="lg" className="shadow-lg shadow-primary/20" asChild>
+        <Link href="/formula">
+            Try It Free <ArrowRight className="ml-2 h-5 w-5" />
+        </Link>
+    </Button>
 );
 
 export default function HomePage() {
   return (
     <>
+      <Header />
       <main className="container mx-auto p-4 sm:p-8">
         {/* Hero Section */}
         <motion.section
@@ -136,7 +137,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <motion.div key={index} variants={itemVariants}>
+              <motion.div key={index} variants={itemVariantsRight}>
                 <Card className="h-full text-center bg-card/50 backdrop-blur-sm border-primary/10 hover:border-primary/30 transition-all duration-300 hover:shadow-primary/10 hover:shadow-lg">
                   <CardHeader>
                     <div className="mx-auto bg-primary/10 rounded-full p-3 w-fit">
@@ -200,7 +201,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <motion.div key={index} variants={itemVariants}>
+              <motion.div key={index} variants={itemVariantsRight}>
                 <Card className="h-full flex flex-col justify-between bg-card/50 backdrop-blur-sm border-primary/10">
                   <CardContent className="pt-6">
                     <p className="italic text-foreground">"{testimonial.quote}"</p>

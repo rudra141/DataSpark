@@ -3,7 +3,6 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { ArrowRight } from "lucide-react";
 
 export function Header() {
@@ -16,14 +15,9 @@ export function Header() {
         <Button variant="ghost" asChild>
           <Link href="/#features">Features</Link>
         </Button>
-        <SignedIn>
-          <UserButton />
-        </SignedIn>
-        <SignedOut>
-          <SignInButton mode="modal">
-            <Button>Get Started</Button>
-          </SignInButton>
-        </SignedOut>
+        <Button asChild>
+          <Link href="/formula">Get Started <ArrowRight className="ml-2" /></Link>
+        </Button>
       </div>
     </header>
   );
