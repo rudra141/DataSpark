@@ -1,13 +1,13 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { generateFormula, type GenerateFormulaOutput } from "@/ai/flows/generate-formula";
 import { enhancePrompt } from "@/ai/flows/enhance-prompt";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles, Bot, History, Trash2 } from "lucide-react";
+import { Loader2, Sparkles, Bot, History, Trash2, Star } from "lucide-react";
 import { CopyButton } from "@/components/copy-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -33,6 +33,7 @@ import short from "short-uuid";
 type HistoryItem = {
   id: string;
   query: string;
+  isFavorite?: boolean;
 };
 
 export default function FormulaPage() {
@@ -62,14 +63,30 @@ export default function FormulaPage() {
     }
   }, [history]);
 
+  const sortedHistory = useMemo(() => {
+    return [...history].sort((a, b) => {
+      if (a.isFavorite && !b.isFavorite) return -1;
+      if (!a.isFavorite && b.isFavorite) return 1;
+      return 0;
+    });
+  }, [history]);
+
   const addToHistory = (query: string) => {
     if (!query.trim()) return;
-    const newHistoryItem = { id: short.generate(), query };
+    const newHistoryItem = { id: short.generate(), query, isFavorite: false };
     setHistory(prev => [newHistoryItem, ...prev.filter(item => item.query !== query)]);
   };
 
   const removeFromHistory = (id: string) => {
     setHistory(prev => prev.filter(item => item.id !== id));
+  };
+  
+  const toggleFavorite = (id: string) => {
+    setHistory(prev => 
+      prev.map(item => 
+        item.id === id ? { ...item, isFavorite: !item.isFavorite } : item
+      )
+    );
   };
 
   const clearHistory = () => {
@@ -147,11 +164,11 @@ export default function FormulaPage() {
               </SidebarGroupAction>
             )}
             <SidebarMenu>
-              {history.length > 0 ? (
-                history.map((item) => (
+              {sortedHistory.length > 0 ? (
+                sortedHistory.map((item) => (
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
-                      className="h-auto py-1"
+                      className="h-auto py-1 pr-12"
                       onClick={() => setDescription(item.query)}
                       tooltip={{
                         children: item.query,
@@ -159,18 +176,30 @@ export default function FormulaPage() {
                         align: "center",
                       }}
                     >
-                      <span>{item.query}</span>
+                      <span className="truncate">{item.query}</span>
                     </SidebarMenuButton>
-                     <SidebarMenuAction
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeFromHistory(item.id);
-                      }}
-                      showOnHover
-                      title="Delete item"
-                    >
-                      <Trash2 />
-                    </SidebarMenuAction>
+                     <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
+                      <SidebarMenuAction
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(item.id);
+                        }}
+                        showOnHover
+                        title={item.isFavorite ? "Remove from favorites" : "Add to favorites"}
+                      >
+                        <Star className={item.isFavorite ? "text-yellow-400 fill-yellow-400" : ""} />
+                      </SidebarMenuAction>
+                      <SidebarMenuAction
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFromHistory(item.id);
+                        }}
+                        showOnHover
+                        title="Delete item"
+                      >
+                        <Trash2 />
+                      </SidebarMenuAction>
+                    </div>
                   </SidebarMenuItem>
                 ))
               ) : (
