@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import { ArrowRight } from "lucide-react";
 
 export function Header() {
   return (

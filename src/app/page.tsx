@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowRight, Bot, Lightbulb, Zap } from "lucide-react";
 import { motion } from "framer-motion";
-import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -75,22 +75,22 @@ const testimonials = [
 ];
 
 const CTAButton = () => (
-  <>
-    <SignedIn>
-      <Button size="lg" className="shadow-lg shadow-primary/20" asChild>
-        <Link href="/formula">
-          Try It Free <ArrowRight className="ml-2 h-5 w-5" />
-        </Link>
-      </Button>
-    </SignedIn>
-    <SignedOut>
-      <SignInButton mode="modal">
-        <Button size="lg" className="shadow-lg shadow-primary/20">
-          Try It Free <ArrowRight className="ml-2 h-5 w-5" />
-        </Button>
-      </SignInButton>
-    </SignedOut>
-  </>
+    <>
+        <SignedIn>
+            <Button size="lg" className="shadow-lg shadow-primary/20" asChild>
+                <Link href="/formula">
+                    Try It Free <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+            </Button>
+        </SignedIn>
+        <SignedOut>
+            <SignInButton mode="modal">
+                <Button size="lg" className="shadow-lg shadow-primary/20">
+                    Try It Free <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+            </SignInButton>
+        </SignedOut>
+    </>
 );
 
 export default function HomePage() {
