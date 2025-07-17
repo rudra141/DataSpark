@@ -1,13 +1,13 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { generateFormula, type GenerateFormulaOutput } from "@/ai/flows/generate-formula";
 import { enhancePrompt } from "@/ai/flows/enhance-prompt";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles, Bot, History } from "lucide-react";
+import { Loader2, Sparkles, Bot, History, Trash2 } from "lucide-react";
 import { CopyButton } from "@/components/copy-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -25,14 +25,14 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
+  SidebarGroupAction,
 } from "@/components/ui/sidebar";
+import short from "short-uuid";
 
-const placeholderHistory = [
-  { id: 1, query: "Sum of column A if column B is 'Completed'" },
-  { id: 2, query: "Average of column C where column D is 'Sales'" },
-  { id: 3, query: "Count rows if column E is not empty" },
-];
-
+type HistoryItem = {
+  id: string;
+  query: string;
+};
 
 export default function FormulaPage() {
   const [description, setDescription] = useState("");
@@ -40,6 +40,37 @@ export default function FormulaPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+
+  useEffect(() => {
+    try {
+      const storedHistory = localStorage.getItem("formulaHistory");
+      if (storedHistory) {
+        setHistory(JSON.parse(storedHistory));
+      }
+    } catch (error) {
+      console.error("Failed to load history from localStorage", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("formulaHistory", JSON.stringify(history));
+    } catch (error) {
+      console.error("Failed to save history to localStorage", error);
+    }
+  }, [history]);
+
+  const addToHistory = (query: string) => {
+    if (!query.trim()) return;
+    const newHistoryItem = { id: short.generate(), query };
+    // Add to the top and prevent duplicates
+    setHistory(prev => [newHistoryItem, ...prev.filter(item => item.query !== query)]);
+  };
+
+  const clearHistory = () => {
+    setHistory([]);
+  };
 
   const handleEnhancePrompt = async () => {
     if (!description) return;
@@ -70,6 +101,7 @@ export default function FormulaPage() {
     try {
       const output = await generateFormula({ description });
       setResult(output);
+      addToHistory(description);
     } catch (err: any) {
       setError("An error occurred while generating the formula. Please try again later.");
       console.error(err);
@@ -103,22 +135,33 @@ export default function FormulaPage() {
               <History />
               History
             </SidebarGroupLabel>
+            {history.length > 0 && (
+              <SidebarGroupAction asChild>
+                <button onClick={clearHistory}>
+                  <Trash2 />
+                </button>
+              </SidebarGroupAction>
+            )}
             <SidebarMenu>
-              {placeholderHistory.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    className="h-auto py-1"
-                    onClick={() => setDescription(item.query)}
-                    tooltip={{
-                      children: item.query,
-                      side: "right",
-                      align: "center",
-                    }}
-                  >
-                    <span>{item.query}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {history.length > 0 ? (
+                history.map((item) => (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      className="h-auto py-1"
+                      onClick={() => setDescription(item.query)}
+                      tooltip={{
+                        children: item.query,
+                        side: "right",
+                        align: "center",
+                      }}
+                    >
+                      <span>{item.query}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))
+              ) : (
+                <p className="px-2 text-xs text-muted-foreground">No history yet.</p>
+              )}
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
