@@ -326,7 +326,7 @@ export default function FormulaPage() {
                                     <Card>
                                       <CardHeader>
                                         <CardTitle className="font-headline text-xl">Google Sheets Formula</CardTitle>
-                                      </CardHeader>
+                                      </Header>
                                       <CardContent>
                                         <div className="flex items-center space-x-2">
                                           <Input
@@ -405,5 +405,5 @@ export default function FormulaPage() {
         </AlertDialogContent>
       </AlertDialog>
     </>
-
-    
+  );
+}
