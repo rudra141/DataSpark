@@ -3,7 +3,6 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 
 export function Header() {
   return (
@@ -12,18 +11,15 @@ export function Header() {
         FormulaFlow
       </Link>
       <div className="flex items-center gap-4">
-        <SignedOut>
-          <SignInButton mode="modal">
-            <Button variant="ghost">Sign In</Button>
-          </SignInButton>
-          <SignInButton mode="modal" afterSignUpUrl="/formula" afterSignInUrl="/formula">
-             <Button>Get Started</Button>
-          </SignInButton>
-        </SignedOut>
-        <SignedIn>
-          <UserButton afterSignOutUrl="/" />
-        </SignedIn>
+        <Button variant="ghost" asChild>
+          <Link href="#features">Features</Link>
+        </Button>
+        <Button asChild>
+          <Link href="/formula">Get Started</Link>
+        </Button>
       </div>
     </header>
   );
 }
+
+    
