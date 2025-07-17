@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ClerkProvider } from '@clerk/nextjs';
 import { dark } from '@clerk/themes';
+import { Header } from '@/components/header';
 
 export const metadata: Metadata = {
   title: 'FormulaFlow',
@@ -29,6 +30,7 @@ export default function RootLayout({
           <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
         </head>
         <body className="font-body antialiased">
+          <Header />
           {children}
           <Toaster />
         </body>
