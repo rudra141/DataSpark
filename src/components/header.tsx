@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 
 export function Header() {
   return (
@@ -12,11 +12,17 @@ export function Header() {
         FormulaFlow
       </Link>
       <div className="flex items-center gap-4">
-          <Button asChild>
-            <Link href="/formula">
-              Get Started <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-          </Button>
+        <SignedOut>
+          <SignInButton mode="modal">
+            <Button variant="ghost">Sign In</Button>
+          </SignInButton>
+          <SignInButton mode="modal" afterSignUpUrl="/formula" afterSignInUrl="/formula">
+             <Button>Get Started</Button>
+          </SignInButton>
+        </SignedOut>
+        <SignedIn>
+          <UserButton afterSignOutUrl="/" />
+        </SignedIn>
       </div>
     </header>
   );

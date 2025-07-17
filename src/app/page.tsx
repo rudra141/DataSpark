@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowRight, Bot, Lightbulb, Zap } from "lucide-react";
 import { motion } from "framer-motion";
-import { Header } from "@/components/header";
+import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -77,7 +77,6 @@ const testimonials = [
 export default function HomePage() {
   return (
     <div className="min-h-screen w-full bg-background text-foreground bg-gradient-to-br from-background via-card to-secondary/10">
-      <Header />
       <main className="container mx-auto p-4 sm:p-8">
         {/* Hero Section */}
         <motion.section
@@ -99,11 +98,20 @@ export default function HomePage() {
             Stop Googling. Start generating. Describe any calculation in plain English and let our AI do the heavy lifting for you.
           </motion.p>
           <motion.div variants={itemVariants} className="mt-10">
-            <Button size="lg" className="shadow-lg shadow-primary/20" asChild>
-              <Link href="/formula">
-                Try It Free <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
+             <Button size="lg" className="shadow-lg shadow-primary/20" asChild>
+                <SignedIn>
+                  <Link href="/formula">
+                    Try It Free <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </SignedIn>
+              </Button>
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <Button size="lg" className="shadow-lg shadow-primary/20">
+                    Try It Free <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </SignInButton>
+              </SignedOut>
           </motion.div>
         </motion.section>
 
@@ -223,11 +231,19 @@ export default function HomePage() {
           </motion.p>
           <motion.div variants={itemVariants} className="mt-8">
             <Button size="lg" asChild className="shadow-lg shadow-primary/20">
-              <Link href="/formula">
-                Start Generating Formulas for Free
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
+               <SignedIn>
+                  <Link href="/formula">
+                    Start Generating Formulas for Free <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </SignedIn>
             </Button>
+             <SignedOut>
+                <SignInButton mode="modal">
+                  <Button size="lg" className="shadow-lg shadow-primary/20">
+                    Start Generating Formulas for Free <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </SignInButton>
+              </SignedOut>
           </motion.div>
         </motion.section>
       </main>
