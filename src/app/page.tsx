@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowRight, Bot, Lightbulb, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import { Header } from "@/components/header";
+import { SignedIn } from "@clerk/nextjs";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -88,7 +89,7 @@ const testimonials = [
 const CTAButton = () => (
     <Button size="lg" className="shadow-lg shadow-primary/20" asChild>
         <Link href="/formula">
-            Try It Free <ArrowRight className="ml-2 h-5 w-5" />
+            Get Started <ArrowRight className="ml-2 h-5 w-5" />
         </Link>
     </Button>
 );
