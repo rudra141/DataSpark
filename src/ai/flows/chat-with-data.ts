@@ -46,8 +46,8 @@ If the question cannot be answered from the data, say so. Keep your answers conc
 Here is the conversation history for context (if any):
 {{#if history}}
 {{#each history}}
-User: {{#if (this.role === "user")}}{{{this.content}}}{{/if}}
-Assistant: {{#if (this.role === "model")}}{{{this.content}}}{{/if}}
+{{#if (eq this.role "user")}}User: {{{this.content}}}{{/if}}
+{{#if (eq this.role "model")}}Assistant: {{{this.content}}}{{/if}}
 {{/each}}
 {{/if}}
 
