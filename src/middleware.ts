@@ -1,3 +1,4 @@
+
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 const isPublicRoute = createRouteMatcher([
@@ -10,6 +11,7 @@ const isPublicRoute = createRouteMatcher([
 const isProtectedRoute = createRouteMatcher([
   '/formula(.*)',
   '/data-analyzer(.*)',
+  '/chat-with-data(.*)',
 ]);
 
 export default clerkMiddleware((auth, req) => {

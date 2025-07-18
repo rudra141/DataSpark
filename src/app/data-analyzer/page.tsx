@@ -1,16 +1,15 @@
 
 'use client';
 
-import { useState, useMemo, ChangeEvent, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, ChangeEvent } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download, PieChart as PieChartIcon, ScatterChart, LineChart as LineChartIcon, Bot, Send } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, Scatter, LineChart, Line } from 'recharts';
+import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download, PieChart as PieChartIcon, ScatterChart, LineChart as LineChartIcon } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, Scatter, LineChart, Line } from 'recharts';
 import { toPng } from 'html-to-image';
 
 
 import { analyzeData, type AnalyzeDataOutput } from '@/ai/flows/analyze-data';
-import { chatWithData, type ChatMessage } from '@/ai/flows/chat-with-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -18,8 +17,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { ChartContainer } from '@/components/ui/chart';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 type AnalysisResult = AnalyzeDataOutput;
 type RecommendedVisualization = AnalysisResult['recommendedVisualizations'][0];
@@ -127,7 +124,6 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
           <ResponsiveContainer width="100%" height="100%">
             <RechartsPieChart>
               <Tooltip />
-              <Legend />
               <RechartsPie data={data} dataKey={dataKey} nameKey={indexKey} cx="50%" cy="50%" outerRadius={80} label>
                  {data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
@@ -186,110 +182,8 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
   );
 };
 
-const ChatWithData = ({ csvData }: { csvData: string }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [question, setQuestion] = useState('');
-  const [isChatting, setIsChatting] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(scrollToBottom, [messages]);
-
-  const handleChatSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!question.trim()) return;
-
-    setIsChatting(true);
-    const userMessage: ChatMessage = { role: 'user', content: question };
-    setMessages((prev) => [...prev, userMessage]);
-    setQuestion('');
-
-    try {
-      const chatResult = await chatWithData({
-        csvData,
-        question,
-        history: messages.slice(-4), // Send last 4 messages for context
-      });
-      const modelMessage: ChatMessage = { role: 'model', content: chatResult.answer };
-      setMessages((prev) => [...prev, modelMessage]);
-    } catch (err) {
-      console.error(err);
-      const errorMessage: ChatMessage = { role: 'model', content: "Sorry, I encountered an error. Please try again." };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsChatting(false);
-    }
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Bot className="h-6 w-6" />
-          Chat with Your Data
-        </CardTitle>
-        <CardDescription>
-          Ask questions in natural language to get specific insights from your file.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-72 w-full pr-4">
-          <div className="space-y-4">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                {message.role === 'model' && <Bot className="h-6 w-6 shrink-0 text-primary" />}
-                <div
-                  className={`rounded-lg px-4 py-2 text-sm ${
-                    message.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted'
-                  }`}
-                >
-                  <p>{message.content}</p>
-                </div>
-              </div>
-            ))}
-            {isChatting && (
-                <div className="flex gap-3 justify-start">
-                    <Bot className="h-6 w-6 shrink-0 text-primary" />
-                    <div className="rounded-lg px-4 py-2 text-sm bg-muted flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin"/>
-                        <span>Thinking...</span>
-                    </div>
-                </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-        </ScrollArea>
-      </CardContent>
-      <CardFooter>
-        <form onSubmit={handleChatSubmit} className="flex w-full items-center gap-2">
-          <Input
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="e.g., What is the average value for the 'sales' column?"
-            disabled={isChatting}
-          />
-          <Button type="submit" disabled={isChatting || !question.trim()}>
-            {isChatting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            <span className="sr-only">Send</span>
-          </Button>
-        </form>
-      </CardFooter>
-    </Card>
-  );
-};
-
-
 export default function DataAnalyzerPage() {
   const [file, setFile] = useState<File | null>(null);
-  const [csvData, setCsvData] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -312,7 +206,6 @@ export default function DataAnalyzerPage() {
       setError(null);
       setFile(selectedFile);
       setResult(null); // Clear previous results
-      setCsvData(null); // Clear previous data
     }
   };
 
@@ -328,7 +221,6 @@ export default function DataAnalyzerPage() {
 
     try {
       const fileContent = await file.text();
-      setCsvData(fileContent);
       const output = await analyzeData({ csvData: fileContent, fileName: file.name });
       setResult(output);
     } catch (err: any) {
@@ -450,9 +342,6 @@ export default function DataAnalyzerPage() {
                   </div>
                 )}
                 
-                {csvData && <ChatWithData csvData={csvData} />}
-
-
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">

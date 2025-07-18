@@ -146,10 +146,16 @@ const analyzeDataFlow = ai.defineFlow(
       throw new Error("The AI model did not return a valid analysis.");
     }
     
+    // Filter out any visualizations that are missing required fields to prevent crashes.
+    const validVisualizations = (modelOutput.recommendedVisualizations || []).filter(vis => 
+        vis.title && vis.caption && vis.chartType && vis.data && vis.config
+    );
+
     // Manually inject the pre-calculated rowCount to ensure it's always present and correct.
     const finalOutput: AnalyzeDataOutput = {
         ...modelOutput,
         rowCount: rowCount,
+        recommendedVisualizations: validVisualizations
     };
     
     return finalOutput;

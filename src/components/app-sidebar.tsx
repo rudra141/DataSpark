@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart, Calculator, Sparkles } from 'lucide-react';
+import { BarChart, Bot, Calculator, Sparkles } from 'lucide-react';
 
 import {
   Sidebar,
@@ -29,6 +29,11 @@ export function AppSidebar({ children }: { children?: React.ReactNode }) {
       label: 'Data Analyzer',
       icon: BarChart,
     },
+    {
+        href: '/chat-with-data',
+        label: 'Chat with Data',
+        icon: Bot,
+    }
   ];
 
   return (
