@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, ChangeEvent, useRef, useCallback } from 'react';
+import { useState, useMemo, ChangeEvent, useRef, useCallback, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download, PieChart as PieChartIcon, ScatterChart, LineChart as LineChartIcon, Bot, Send } from 'lucide-react';
