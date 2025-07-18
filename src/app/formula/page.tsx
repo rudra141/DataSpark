@@ -27,7 +27,6 @@ import {
   SidebarGroupAction,
 } from "@/components/ui/sidebar";
 import short from "short-uuid";
-import { UserButton } from "@clerk/nextjs";
 
 type HistoryItem = {
   id: string;
@@ -149,7 +148,6 @@ export default function FormulaPage() {
               </Button>
               <div className="font-headline text-lg font-bold text-primary">FormulaFlow</div>
             </div>
-            <UserButton afterSignOutUrl="/" />
           </div>
         </SidebarHeader>
         <SidebarContent>

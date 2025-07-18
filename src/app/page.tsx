@@ -8,7 +8,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowRight, Bot, Lightbulb, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import { Header } from "@/components/header";
-import { SignedIn } from "@clerk/nextjs";
 
 const containerVariants = {
   hidden: { opacity: 0 },
