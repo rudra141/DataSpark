@@ -152,11 +152,17 @@ const analyzeDataFlow = ai.defineFlow(
         vis && vis.title && vis.caption && vis.chartType && vis.data && vis.config
     );
 
-    // Manually inject the pre-calculated rowCount to ensure it's always present and correct.
+    // DEFINITIVE FIX 2: Manually construct the final object to guarantee schema compliance.
+    // Do not spread `modelOutput` as it may contain unexpected fields or be missing required ones.
     const finalOutput: AnalyzeDataOutput = {
-        ...modelOutput,
-        rowCount: rowCount,
-        recommendedVisualizations: validVisualizations
+        fileName: modelOutput.fileName || input.fileName,
+        rowCount: rowCount, // Guaranteed to be correct.
+        columnCount: modelOutput.columnCount || 0,
+        columnNames: modelOutput.columnNames || [],
+        summaryStats: modelOutput.summaryStats, // This is optional, so it's safe.
+        missingValues: modelOutput.missingValues,
+        columnTypes: modelOutput.columnTypes,
+        recommendedVisualizations: validVisualizations, // Guaranteed to be valid.
     };
     
     return finalOutput;
