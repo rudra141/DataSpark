@@ -4,12 +4,13 @@
 import { useState, useMemo, ChangeEvent, useRef, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download, PieChart as PieChartIcon, ScatterChart, LineChart as LineChartIcon } from 'lucide-react';
+import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download, PieChart as PieChartIcon, ScatterChart, LineChart as LineChartIcon, Bot, Send } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, Scatter, LineChart, Line } from 'recharts';
 import { toPng } from 'html-to-image';
 
 
 import { analyzeData, type AnalyzeDataOutput } from '@/ai/flows/analyze-data';
+import { chatWithData, type ChatMessage } from '@/ai/flows/chat-with-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -17,6 +18,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type AnalysisResult = AnalyzeDataOutput;
 type RecommendedVisualization = AnalysisResult['recommendedVisualizations'][0];
@@ -78,20 +81,6 @@ const InsightCard = ({ title, stats, emptyText = "No data available." }: { title
     </CardContent>
   </Card>
 );
-
-const ChartCardUI = ({ title, caption, onDownload, children }: { title: string; caption: string; children: React.ReactNode, onDownload: () => void }) => (
-    <CardHeader className="flex flex-row items-start justify-between">
-      <div className="flex-1">
-        <CardTitle className="text-lg">{title}</CardTitle>
-        <CardDescription className="mt-1">{caption}</CardDescription>
-      </div>
-       <Button variant="ghost" size="icon" onClick={onDownload} className="h-8 w-8 ml-4">
-        <Download className="h-4 w-4" />
-        <span className="sr-only">Download Chart</span>
-      </Button>
-    </CardHeader>
-);
-
 
 const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVisualization }) => {
   const chartRef = useRef<HTMLDivElement>(null);
@@ -178,9 +167,16 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
 
   return (
     <Card ref={chartRef} className="bg-card">
-      <ChartCardUI title={visualization.title} caption={visualization.caption} onDownload={handleDownload}>
-         <div />
-      </ChartCardUI>
+      <CardHeader className="flex flex-row items-start justify-between">
+        <div className="flex-1">
+          <CardTitle className="text-lg">{visualization.title}</CardTitle>
+          <CardDescription className="mt-1">{visualization.caption}</CardDescription>
+        </div>
+        <Button variant="ghost" size="icon" onClick={handleDownload} className="h-8 w-8 ml-4">
+          <Download className="h-4 w-4" />
+          <span className="sr-only">Download Chart</span>
+        </Button>
+      </CardHeader>
       <CardContent>
           <ChartContainer config={{}} className="h-80 w-full">
             {renderChart()}
@@ -190,9 +186,110 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
   );
 };
 
+const ChatWithData = ({ csvData }: { csvData: string }) => {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [question, setQuestion] = useState('');
+  const [isChatting, setIsChatting] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(scrollToBottom, [messages]);
+
+  const handleChatSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!question.trim()) return;
+
+    setIsChatting(true);
+    const userMessage: ChatMessage = { role: 'user', content: question };
+    setMessages((prev) => [...prev, userMessage]);
+    setQuestion('');
+
+    try {
+      const chatResult = await chatWithData({
+        csvData,
+        question,
+        history: messages.slice(-4), // Send last 4 messages for context
+      });
+      const modelMessage: ChatMessage = { role: 'model', content: chatResult.answer };
+      setMessages((prev) => [...prev, modelMessage]);
+    } catch (err) {
+      console.error(err);
+      const errorMessage: ChatMessage = { role: 'model', content: "Sorry, I encountered an error. Please try again." };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsChatting(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Bot className="h-6 w-6" />
+          Chat with Your Data
+        </CardTitle>
+        <CardDescription>
+          Ask questions in natural language to get specific insights from your file.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="h-72 w-full pr-4">
+          <div className="space-y-4">
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                {message.role === 'model' && <Bot className="h-6 w-6 shrink-0 text-primary" />}
+                <div
+                  className={`rounded-lg px-4 py-2 text-sm ${
+                    message.role === 'user'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted'
+                  }`}
+                >
+                  <p>{message.content}</p>
+                </div>
+              </div>
+            ))}
+            {isChatting && (
+                <div className="flex gap-3 justify-start">
+                    <Bot className="h-6 w-6 shrink-0 text-primary" />
+                    <div className="rounded-lg px-4 py-2 text-sm bg-muted flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin"/>
+                        <span>Thinking...</span>
+                    </div>
+                </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
+      </CardContent>
+      <CardFooter>
+        <form onSubmit={handleChatSubmit} className="flex w-full items-center gap-2">
+          <Input
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            placeholder="e.g., What is the average value for the 'sales' column?"
+            disabled={isChatting}
+          />
+          <Button type="submit" disabled={isChatting || !question.trim()}>
+            {isChatting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            <span className="sr-only">Send</span>
+          </Button>
+        </form>
+      </CardFooter>
+    </Card>
+  );
+};
+
 
 export default function DataAnalyzerPage() {
   const [file, setFile] = useState<File | null>(null);
+  const [csvData, setCsvData] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -215,6 +312,7 @@ export default function DataAnalyzerPage() {
       setError(null);
       setFile(selectedFile);
       setResult(null); // Clear previous results
+      setCsvData(null); // Clear previous data
     }
   };
 
@@ -230,6 +328,7 @@ export default function DataAnalyzerPage() {
 
     try {
       const fileContent = await file.text();
+      setCsvData(fileContent);
       const output = await analyzeData({ csvData: fileContent, fileName: file.name });
       setResult(output);
     } catch (err: any) {
@@ -350,6 +449,9 @@ export default function DataAnalyzerPage() {
                       ))}
                   </div>
                 )}
+                
+                {csvData && <ChatWithData csvData={csvData} />}
+
 
                 <Card>
                   <CardHeader>
