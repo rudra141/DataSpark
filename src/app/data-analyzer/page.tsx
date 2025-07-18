@@ -182,8 +182,8 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
   };
 
   return (
-    // The ref is now on a new outer div that wraps the card, ensuring the entire visual element is captured.
-    <div ref={chartRef} className="bg-card rounded-lg border">
+    // This div is now the target for image capture. It provides a solid background.
+    <div ref={chartRef} className="bg-card rounded-lg border p-0">
       <ChartCardUI title={visualization.title} caption={visualization.caption} onDownload={handleDownload}>
          <ChartContainer config={{}} className="h-full w-full">
             {renderChart()}
