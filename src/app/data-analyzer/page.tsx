@@ -4,8 +4,8 @@
 import { useState, useMemo, ChangeEvent, useRef, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download, PieChart as PieChartIcon, BarChart2, Link as LinkIcon } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell } from 'recharts';
+import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download, PieChart as PieChartIcon, BarChart2, Link as LinkIcon, ScatterChart } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, Scatter, LineChart, Line } from 'recharts';
 import { toPng } from 'html-to-image';
 
 
@@ -19,6 +19,9 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 type AnalysisResult = AnalyzeDataOutput;
+type RecommendedVisualization = AnalysisResult['recommendedVisualizations'][0];
+
+const PIE_CHART_COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#AF19FF", "#FF4560", "#775DD0"];
 
 const ResultSkeleton = () => (
   <div className="space-y-6">
@@ -76,25 +79,115 @@ const InsightCard = ({ title, stats, emptyText = "No data available." }: { title
   </Card>
 );
 
-const ChartCardUI = ({ title, icon: Icon, children, onDownload }: { title: string; icon: React.ElementType, children: React.ReactNode, onDownload: () => void }) => (
+const ChartCardUI = ({ title, caption, onDownload, children }: { title: string; caption: string; children: React.ReactNode, onDownload: () => void }) => (
   <Card>
-    <CardHeader className="flex flex-row items-center justify-between">
-      <div className="flex items-center gap-2">
-        <Icon className="h-5 w-5 text-primary" />
+    <CardHeader className="flex flex-row items-start justify-between">
+      <div className="flex-1">
         <CardTitle className="text-lg">{title}</CardTitle>
+        <CardDescription className="mt-1">{caption}</CardDescription>
       </div>
-       <Button variant="ghost" size="icon" onClick={onDownload} className="h-8 w-8">
+       <Button variant="ghost" size="icon" onClick={onDownload} className="h-8 w-8 ml-4">
         <Download className="h-4 w-4" />
         <span className="sr-only">Download Chart</span>
       </Button>
     </CardHeader>
     <CardContent>
-      <div className="h-64 w-full">
+      <div className="h-80 w-full">
         {children}
       </div>
     </CardContent>
   </Card>
 );
+
+
+const DynamicChartRenderer = ({ visualization, onDownload }: { visualization: RecommendedVisualization; onDownload: () => void }) => {
+  const chartRef = useRef<HTMLDivElement>(null);
+  
+  const handleDownload = useCallback(() => {
+    if (chartRef.current === null) return;
+    toPng(chartRef.current, { cacheBust: true })
+      .then((dataUrl) => {
+        const link = document.createElement('a');
+        link.download = `${visualization.title.replace(/\s+/g, '_')}.png`;
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((err) => {
+        console.error('Failed to download chart', err);
+      });
+  }, [visualization.title]);
+
+
+  const renderChart = () => {
+    const { chartType, data, config } = visualization;
+    const { dataKey, indexKey, xAxisLabel, yAxisLabel } = config;
+
+    switch (chartType) {
+      case 'bar':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey={indexKey} label={{ value: xAxisLabel, position: 'insideBottom', offset: -10 }} />
+              <YAxis label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }}/>
+              <Tooltip content={<ChartTooltipContent />} />
+              <Bar dataKey={dataKey} fill="hsl(var(--primary))" />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+      case 'pie':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <RechartsPieChart>
+              <Tooltip content={<ChartTooltipContent nameKey={indexKey} />} />
+              <Legend />
+              <RechartsPie data={data} dataKey={dataKey} nameKey={indexKey} cx="50%" cy="50%" outerRadius={80} label>
+                 {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
+                ))}
+              </RechartsPie>
+            </RechartsPieChart>
+          </ResponsiveContainer>
+        );
+      case 'scatter':
+        return (
+           <ResponsiveContainer width="100%" height="100%">
+            <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+              <CartesianGrid />
+              <XAxis type="number" dataKey="x" name={xAxisLabel || 'x'} label={{ value: xAxisLabel, position: 'insideBottom', offset: -10 }} />
+              <YAxis type="number" dataKey="y" name={yAxisLabel || 'y'} label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }} />
+              <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<ChartTooltipContent />} />
+              <Scatter name="Data" data={data} fill="hsl(var(--primary))" />
+            </ScatterChart>
+          </ResponsiveContainer>
+        )
+      case 'line':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey={indexKey} label={{ value: xAxisLabel, position: 'insideBottom', offset: -10 }} />
+              <YAxis label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }}/>
+              <Tooltip content={<ChartTooltipContent />} />
+              <Line type="monotone" dataKey={dataKey} stroke="hsl(var(--primary))" activeDot={{ r: 8 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        );
+      default:
+        return <p>Unsupported chart type: {chartType}</p>;
+    }
+  };
+
+  return (
+    <div ref={chartRef}>
+      <ChartCardUI title={visualization.title} caption={visualization.caption} onDownload={handleDownload}>
+         <ChartContainer config={{}} className="h-full w-full">
+            {renderChart()}
+          </ChartContainer>
+      </ChartCardUI>
+    </div>
+  );
+};
 
 
 export default function DataAnalyzerPage() {
@@ -104,35 +197,6 @@ export default function DataAnalyzerPage() {
   const [error, setError] = useState<string | null>(null);
 
   const { isLoaded: isUserLoaded } = useUser();
-  
-  const chartRefs = {
-    missingValues: useRef<HTMLDivElement>(null),
-    columnTypes: useRef<HTMLDivElement>(null),
-    correlations: useRef<HTMLDivElement>(null),
-  };
-  
-  const chartConfig = {
-    // We can define colors and labels here for chart consistency later
-  };
-
-  const handleDownloadChart = useCallback((chartName: keyof typeof chartRefs) => {
-    const ref = chartRefs[chartName].current;
-    if (ref === null) {
-      return;
-    }
-    toPng(ref, { cacheBust: true })
-      .then((dataUrl) => {
-        const link = document.createElement('a');
-        link.download = `${result?.fileName?.replace('.csv', '')}_${chartName}.png`;
-        link.href = dataUrl;
-        link.click();
-      })
-      .catch((err) => {
-        console.error('Failed to download chart', err);
-        setError('Could not download chart. Please try again.');
-      });
-  }, [chartRefs, result?.fileName]);
-
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -176,30 +240,6 @@ export default function DataAnalyzerPage() {
   };
 
   const isReady = isUserLoaded;
-  
-  const pieChartData = useMemo(() => {
-    if (!result) return [];
-    const typeCounts = result.columnTypes.stats.reduce((acc, curr) => {
-      const type = String(curr.value);
-      acc[type] = (acc[type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return Object.entries(typeCounts).map(([name, value]) => ({ name, value }));
-  }, [result]);
-  
-  const PIE_CHART_COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#AF19FF"];
-  
-  const missingValuesData = useMemo(() => {
-    if (!result) return [];
-    return result.missingValues.stats.filter(s => Number(s.value) > 0);
-  }, [result]);
-
-  const correlationData = useMemo(() => {
-    if (!result) return [];
-    return result.correlationAnalysis.stats;
-  }, [result]);
-
 
   return (
     <SidebarProvider>
@@ -212,7 +252,7 @@ export default function DataAnalyzerPage() {
               Data Analyzer
             </h1>
             <p className="text-muted-foreground mt-2">
-              Upload a CSV file to get instant insights, statistics, and visualizations about your data.
+              Upload a CSV file to get instant insights, statistics, and AI-recommended visualizations.
             </p>
           </header>
 
@@ -296,68 +336,19 @@ export default function DataAnalyzerPage() {
                    </CardHeader>
                 </Card>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <InsightCard title={result.summaryStats.title} stats={result.summaryStats.stats} />
-                  <InsightCard title={result.missingValues.title} stats={missingValuesData} emptyText="No missing values found." />
+                  <InsightCard title={result.missingValues.title} stats={result.missingValues.stats} emptyText="No missing values found." />
                   <InsightCard title={result.columnTypes.title} stats={result.columnTypes.stats} />
-                  <InsightCard title={result.outlierAnalysis.title} stats={result.outlierAnalysis.stats} emptyText="No significant outliers detected." />
                 </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {missingValuesData.length > 0 && (
-                    <div ref={chartRefs.missingValues}>
-                      <ChartCardUI title="Missing Values" icon={BarChart2} onDownload={() => handleDownloadChart('missingValues')}>
-                        <ChartContainer config={chartConfig} className="h-full w-full">
-                           <ResponsiveContainer width="100%" height="100%">
-                              <BarChart data={missingValuesData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="columnName" />
-                                <YAxis />
-                                <Tooltip content={<ChartTooltipContent />} />
-                                <Bar dataKey="value" name="Missing Count" fill="hsl(var(--primary))" />
-                              </BarChart>
-                            </ResponsiveContainer>
-                        </ChartContainer>
-                      </ChartCardUI>
-                    </div>
-                  )}
-
-                  <div ref={chartRefs.columnTypes}>
-                    <ChartCardUI title="Column Types" icon={PieChartIcon} onDownload={() => handleDownloadChart('columnTypes')}>
-                      <ChartContainer config={chartConfig} className="h-full w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RechartsPieChart>
-                            <Tooltip content={<ChartTooltipContent nameKey="name" />} />
-                            <RechartsPie data={pieChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="hsl(var(--primary))" label>
-                               {pieChartData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
-                              ))}
-                            </RechartsPie>
-                          </RechartsPieChart>
-                        </ResponsiveContainer>
-                      </ChartContainer>
-                    </ChartCardUI>
-                   </div>
-
-                   {correlationData.length > 0 && (
-                     <div ref={chartRefs.correlations} className="lg:col-span-2">
-                      <ChartCardUI title="Top Correlations" icon={LinkIcon} onDownload={() => handleDownloadChart('correlations')}>
-                          <ChartContainer config={chartConfig} className="h-full w-full">
-                              <ResponsiveContainer width="100%" height="100%">
-                                  <BarChart data={correlationData} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
-                                      <CartesianGrid strokeDasharray="3 3" />
-                                      <XAxis type="number" domain={[-1, 1]} />
-                                      <YAxis dataKey="columnName" type="category" width={120} />
-                                      <Tooltip content={<ChartTooltipContent />} />
-                                      <Legend />
-                                      <Bar dataKey="value" name="Correlation" fill="hsl(var(--primary))" />
-                                  </BarChart>
-                              </ResponsiveContainer>
-                          </ChartContainer>
-                      </ChartCardUI>
-                    </div>
-                   )}
-                </div>
+                
+                {result.recommendedVisualizations.length > 0 && (
+                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {result.recommendedVisualizations.map((vis, index) => (
+                        <DynamicChartRenderer key={index} visualization={vis} onDownload={() => {}} />
+                      ))}
+                  </div>
+                )}
 
                 <Card>
                   <CardHeader>

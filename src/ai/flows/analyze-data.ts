@@ -1,9 +1,9 @@
 'use server';
 
 /**
- * @fileOverview Analyzes the content of a CSV file to provide exploratory data analysis (EDA) insights.
+ * @fileOverview Analyzes CSV data, provides EDA insights, and recommends specific visualizations.
  *
- * - analyzeData - A function that performs EDA on CSV data.
+ * - analyzeData - A function that performs EDA and recommends charts.
  * - AnalyzeDataInput - The input type for the analyzeData function.
  * - AnalyzeDataOutput - The return type for the analyzeData function.
  */
@@ -22,6 +22,20 @@ const ColumnStatSchema = z.object({
   value: z.union([z.string(), z.number()]),
 });
 
+const RecommendedVisualizationSchema = z.object({
+    chartType: z.enum(['bar', 'pie', 'scatter', 'line']).describe('The type of chart recommended.'),
+    title: z.string().describe('A descriptive title for the chart.'),
+    caption: z.string().describe('A brief caption explaining the insight from the chart.'),
+    data: z.array(z.record(z.union([z.string(), z.number()]))).describe('The data structured for the chart. For scatter plots, should contain x, y, and z (size) keys. For others, typically name and value keys.'),
+    config: z.object({
+        dataKey: z.string().describe("The key for the main data value in the data array (e.g., 'value' or 'count')."),
+        indexKey: z.string().describe("The key for the label/index in the data array (e.g., 'name' or 'date')."),
+        xAxisLabel: z.string().optional().describe("Label for the X-axis."),
+        yAxisLabel: z.string().optional().describe("Label for the Y-axis."),
+    }).describe('Configuration for rendering the chart.'),
+});
+
+
 const AnalyzeDataOutputSchema = z.object({
   fileName: z.string().describe('The name of the analyzed file.'),
   rowCount: z.number().describe('The total number of rows in the dataset.'),
@@ -39,14 +53,7 @@ const AnalyzeDataOutputSchema = z.object({
     title: z.string(),
     stats: z.array(ColumnStatSchema),
   }).describe('The inferred data type for each column (e.g., Numeric, Categorical, Text).'),
-  correlationAnalysis: z.object({
-    title: z.string(),
-    stats: z.array(z.object({ columnName: z.string().describe("e.g., 'ColumnA - ColumnB'"), value: z.number().describe("The correlation coefficient") })),
-  }).describe('Top 3 most correlated pairs of numerical columns.'),
-  outlierAnalysis: z.object({
-    title: z.string(),
-    stats: z.array(ColumnStatSchema),
-  }).describe('Columns identified as potentially having outliers, with a brief reason.'),
+  recommendedVisualizations: z.array(RecommendedVisualizationSchema).describe('An array of AI-recommended visualizations based on the data analysis.'),
 });
 export type AnalyzeDataOutput = z.infer<typeof AnalyzeDataOutputSchema>;
 
@@ -59,27 +66,46 @@ const prompt = ai.definePrompt({
   name: 'analyzeDataPrompt',
   input: {schema: AnalyzeDataInputSchema},
   output: {schema: AnalyzeDataOutputSchema},
-  prompt: `You are an expert data analyst specializing in Exploratory Data Analysis (EDA).
+  prompt: `You are an expert data analyst. A user has uploaded a dataset named '{{{fileName}}}' for analysis.
 
-Given the raw text content of a CSV file, perform a thorough analysis and provide a structured summary. The user has uploaded a file named '{{{fileName}}}'.
+First, perform a thorough Exploratory Data Analysis (EDA) on the provided CSV data.
+Based on your analysis, you must generate a JSON output containing:
+1.  **Basic Info**: fileName, rowCount, columnCount, columnNames.
+2.  **Key Statistics**: A summary of important stats for numerical and categorical columns. Title should be 'Key Statistics'.
+3.  **Missing Values**: Top columns with missing data and their counts. Title should be 'Missing Values'.
+4.  **Column Types**: Inferred data types for each column. Title should be 'Column Types'.
+5.  **Recommended Visualizations**: This is the most important part. Analyze the data to find the most insightful stories and generate up to 4 of the most relevant visualizations to tell these stories. For each visualization:
+    -   Choose the best `chartType`: 'bar', 'pie', 'scatter', or 'line'.
+    -   Provide a clear `title` and a concise `caption` explaining the insight.
+    -   Generate the `data` array needed to render the chart with Recharts.
+        -   For bar/pie charts, use objects with 'name' and 'value' keys.
+        -   For scatter plots, use 'x', 'y', and 'z' (for bubble size) keys.
+        -   For line charts, use a date/time key for the x-axis and a numeric key for the y-axis.
+    -   Provide a `config` object with `dataKey` (the main value, e.g., 'value'), `indexKey` (the label, e.g., 'name'), and optional axis labels.
+
+**Example for a recommended bar chart:**
+\`\`\`json
+{
+  "chartType": "bar",
+  "title": "Sales by Region",
+  "caption": "North America has the highest sales.",
+  "data": [
+    { "name": "North America", "value": 5000 },
+    { "name": "Europe", "value": 3200 }
+  ],
+  "config": {
+    "dataKey": "value",
+    "indexKey": "name"
+  }
+}
+\`\`\`
 
 Analyze the following CSV data:
 \`\`\`csv
 {{{csvData}}}
 \`\`\`
 
-Based on your analysis, provide the following information in the specified JSON format:
-1.  **File Name**: Return the original file name.
-2.  **Row and Column Count**: Determine the number of rows (excluding the header) and columns.
-3.  **Column Names**: List all column headers.
-4.  **Summary Statistics**: Provide key descriptive stats. For numerical columns, this might include mean, median, and standard deviation. For categorical columns, it could be the mode or number of unique values. Present this as a list of key-value pairs. Title should be 'Key Statistics'.
-5.  **Missing Values**: Identify the top 3 columns with the most missing or empty values and report the count for each. If there are no missing values, state that. Title should be 'Missing Values'.
-6.  **Column Types**: Infer the data type for each column (e.g., Numeric, Categorical, Boolean, Date, Text). Present this as a list of key-value pairs. Title should be 'Column Types'.
-7.  **Correlation Analysis**: Identify the top 3 most positively or negatively correlated pairs of numerical columns. Report the correlation coefficient for each pair. If not enough numerical columns exist, state that. Title should be 'Top Correlations'.
-8.  **Outlier Analysis**: Identify up to 3 columns that likely contain outliers. For each, provide a brief note (e.g., 'High standard deviation'). If no significant outliers are apparent, state that. Title should be 'Potential Outliers'.
-
-Your entire output must be a single JSON object that strictly adheres to the provided output schema.
-`,
+Your entire output must be a single JSON object that strictly adheres to the provided output schema. Do not add any commentary outside the JSON.`,
 });
 
 const analyzeDataFlow = ai.defineFlow(
