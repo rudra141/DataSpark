@@ -245,7 +245,7 @@ export default function HomePage() {
         </main>
         
         <footer className="container mx-auto p-8 text-center text-muted-foreground text-sm">
-          <p>&copy; {new Date().getFullYear()} FormulaFlow. All rights reserved.</p>
+          © {new Date().getFullYear()} FormulaFlow. All Rights Reserved.
         </footer>
       </div>
     </>

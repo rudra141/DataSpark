@@ -22,7 +22,7 @@ export function Header() {
           </Button>
         </SignedOut>
         <SignedIn>
-          <UserButton afterSignOutUrl="/" />
+           <UserButton afterSignOutUrl="/" />
         </SignedIn>
       </div>
     </header>
