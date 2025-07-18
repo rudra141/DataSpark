@@ -37,7 +37,7 @@ type HistoryItem = {
   isFavorite?: boolean;
 };
 
-const FREE_GENERATIONS_LIMIT = 3;
+const FREE_GENERATIONS_LIMIT = 100;
 
 export default function FormulaPage() {
   const [description, setDescription] = useState("");
