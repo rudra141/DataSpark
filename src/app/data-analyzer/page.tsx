@@ -16,7 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
-import { ChartContainer } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 type AnalysisResult = AnalyzeDataOutput;
 type RecommendedVisualization = AnalysisResult['recommendedVisualizations'][0];
@@ -87,7 +87,7 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
     toPng(chartRef.current, { cacheBust: true, pixelRatio: 2, backgroundColor: 'hsl(var(--card))' })
       .then((dataUrl) => {
         const link = document.createElement('a');
-        const safeTitle = visualization.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        const safeTitle = (visualization?.title || 'chart').replace(/[^a-z0-9]/gi, '_').toLowerCase();
         link.download = `${safeTitle}.png`;
         link.href = dataUrl;
         link.click();
@@ -95,10 +95,19 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
       .catch((err) => {
         console.error('Failed to download chart', err);
       });
-  }, [visualization.title]);
-
+  }, [visualization]);
 
   const renderChart = () => {
+    // Defensively check for visualization and its properties to prevent crashes
+    if (!visualization?.chartType || !visualization.data || !visualization.config) {
+      return (
+        <div className="flex items-center justify-center h-full text-muted-foreground">
+          <AlertTriangle className="h-4 w-4 mr-2" />
+          Chart data is incomplete.
+        </div>
+      );
+    }
+    
     const { chartType, data, config } = visualization;
     const { dataKey, indexKey, xAxisLabel, yAxisLabel } = config;
 
@@ -110,7 +119,7 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey={indexKey} angle={-30} textAnchor="end" height={60} interval={0} tick={{ fontSize: 12 }} label={{ value: xAxisLabel, position: 'insideBottom', offset: -15 }} />
               <YAxis tick={{ fontSize: 12 }} label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }}/>
-              <Tooltip />
+              <Tooltip cursor={{fill: 'hsl(var(--muted))'}} contentStyle={{backgroundColor: 'hsl(var(--background))'}}/>
               <Bar dataKey={dataKey}>
                 {data.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
@@ -123,7 +132,7 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
         return (
           <ResponsiveContainer width="100%" height="100%">
             <RechartsPieChart>
-              <Tooltip />
+              <Tooltip cursor={{fill: 'hsl(var(--muted))'}} contentStyle={{backgroundColor: 'hsl(var(--background))'}}/>
               <RechartsPie data={data} dataKey={dataKey} nameKey={indexKey} cx="50%" cy="50%" outerRadius={80} label>
                  {data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
@@ -139,7 +148,7 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
               <CartesianGrid />
               <XAxis type="number" dataKey="x" name={xAxisLabel || 'x'} tick={{ fontSize: 12 }} label={{ value: xAxisLabel, position: 'insideBottom', offset: -10 }} />
               <YAxis type="number" dataKey="y" name={yAxisLabel || 'y'} tick={{ fontSize: 12 }} label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }} />
-              <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+              <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{backgroundColor: 'hsl(var(--background))'}}/>
               <Scatter name="Data" data={data} fill="hsl(var(--primary))" />
             </ScatterChart>
           </ResponsiveContainer>
@@ -151,7 +160,7 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey={indexKey} angle={-30} textAnchor="end" height={60} interval="preserveStartEnd" tick={{ fontSize: 12 }} label={{ value: xAxisLabel, position: 'insideBottom', offset: -15 }} />
               <YAxis tick={{ fontSize: 12 }} label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }}/>
-              <Tooltip />
+              <Tooltip cursor={{stroke: 'hsl(var(--muted))'}} contentStyle={{backgroundColor: 'hsl(var(--background))'}}/>
               <Line type="monotone" dataKey={dataKey} stroke="hsl(var(--primary))" activeDot={{ r: 8 }} />
             </LineChart>
           </ResponsiveContainer>
@@ -329,9 +338,9 @@ export default function DataAnalyzerPage() {
                 </Card>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <InsightCard title="Key Statistics" stats={result.summaryStats?.stats} emptyText="No summary statistics generated."/>
-                  <InsightCard title={result.missingValues.title} stats={result.missingValues.stats} emptyText="No missing values found." />
-                  <InsightCard title={result.columnTypes.title} stats={result.columnTypes.stats} />
+                  {result.summaryStats && <InsightCard title="Key Statistics" stats={result.summaryStats.stats} emptyText="No summary statistics generated."/>}
+                  {result.missingValues && <InsightCard title={result.missingValues.title} stats={result.missingValues.stats} emptyText="No missing values found." />}
+                  {result.columnTypes && <InsightCard title={result.columnTypes.title} stats={result.columnTypes.stats} />}
                 </div>
                 
                 {result.recommendedVisualizations.length > 0 && (
