@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -45,11 +46,8 @@ If the question cannot be answered from the data, say so. Keep your answers conc
 Here is the conversation history for context (if any):
 {{#if history}}
 {{#each history}}
-{{#if (eq role 'user')}}
-User: {{{content}}}
-{{else}}
-Assistant: {{{content}}}
-{{/if}}
+User: {{#if (this.role === "user")}}{{{this.content}}}{{/if}}
+Assistant: {{#if (this.role === "model")}}{{{this.content}}}{{/if}}
 {{/each}}
 {{/if}}
 
