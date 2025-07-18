@@ -9,6 +9,7 @@ const isPublicRoute = createRouteMatcher([
 
 const isProtectedRoute = createRouteMatcher([
   '/formula(.*)',
+  '/data-analyzer(.*)',
 ]);
 
 export default clerkMiddleware((auth, req) => {

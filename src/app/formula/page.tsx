@@ -30,6 +30,7 @@ import {
 import short from "short-uuid";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
+import { AppSidebar } from "@/components/app-sidebar";
 
 type HistoryItem = {
   id: string;
@@ -52,21 +53,23 @@ export default function FormulaPage() {
 
   // Load and save data from/to localStorage
   useEffect(() => {
-    if (isUserLoaded && user) {
-      // Load from localStorage
-      const storedHistory = localStorage.getItem(`formulaHistory_${user.id}`);
-      if (storedHistory) {
-        try {
-          setHistory(JSON.parse(storedHistory));
-        } catch (e) {
-          console.error("Failed to parse history from localStorage", e);
-          setHistory([]);
-        }
+    if (!isUserLoaded) return;
+    
+    // This effect runs once when the user is loaded.
+    // It wraps all localStorage access in a single check.
+    if (user) {
+      try {
+        const storedHistory = localStorage.getItem(`formulaHistory_${user.id}`);
+        setHistory(storedHistory ? JSON.parse(storedHistory) : []);
+        
+        const storedCount = localStorage.getItem(`generationCount_${user.id}`);
+        setGenerationCount(storedCount ? parseInt(storedCount, 10) : 0);
+      } catch (e) {
+        console.error("Failed to parse data from localStorage", e);
+        setHistory([]);
+        setGenerationCount(0);
       }
-
-      const storedCount = localStorage.getItem(`generationCount_${user.id}`);
-      setGenerationCount(storedCount ? parseInt(storedCount, 10) : 0);
-    } else if (isUserLoaded && !user) {
+    } else {
       // Handle logged out state
       setHistory([]);
       setGenerationCount(0);
@@ -74,16 +77,19 @@ export default function FormulaPage() {
   }, [isUserLoaded, user]);
 
   useEffect(() => {
-    // Save to localStorage
+    // This effect handles SAVING data to localStorage whenever it changes.
     if (user?.id) {
       if (history.length > 0) {
         localStorage.setItem(`formulaHistory_${user.id}`, JSON.stringify(history));
+      } else {
+        localStorage.removeItem(`formulaHistory_${user.id}`);
       }
       if (generationCount !== null) {
         localStorage.setItem(`generationCount_${user.id}`, generationCount.toString());
       }
     }
-  }, [history, generationCount, user]);
+  }, [history, generationCount, user?.id]);
+
 
   const hasReachedLimit = useMemo(() => {
     if (generationCount === null) return false;
@@ -180,21 +186,8 @@ export default function FormulaPage() {
 
   return (
     <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
-           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Link href="/">
-                <Button variant="ghost" size="icon" className="h-7 w-7">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                </Button>
-              </Link>
-              <div className="font-headline text-lg font-bold text-primary">FormulaFlow</div>
-            </div>
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-           <SidebarGroup>
+      <AppSidebar>
+         <SidebarGroup>
             <SidebarGroupLabel className="flex items-center gap-2">
               <History />
               History
@@ -256,8 +249,7 @@ export default function FormulaPage() {
               )}
             </SidebarMenu>
           </SidebarGroup>
-        </SidebarContent>
-      </Sidebar>
+      </AppSidebar>
       <SidebarInset>
          <main className="container mx-auto p-4 sm:p-8 flex flex-col items-center">
             <div className="w-full max-w-4xl space-y-8">
