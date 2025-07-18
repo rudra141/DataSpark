@@ -80,13 +80,12 @@ export async function analyzeData(input: AnalyzeDataInput): Promise<AnalyzeDataO
 const prompt = ai.definePrompt({
   name: 'analyzeDataPrompt',
   input: {schema: AnalyzeDataPromptInputSchema},
-  output: {schema: AnalyzeDataOutputSchema},
+  output: {schema: AnalyzeDataOutputSchema.omit({ rowCount: true })}, // The model doesn't need to return rowCount anymore.
   prompt: `You are an expert data analyst. A user has uploaded a dataset named '{{{fileName}}}' for analysis.
 The dataset has already been determined to have {{{rowCount}}} rows.
 
-You must use this provided row count in your analysis.
 Based on your analysis of the CSV data, generate a JSON output containing:
-1.  **Basic Info**: fileName, rowCount (use the provided value), columnCount, columnNames.
+1.  **Basic Info**: fileName, columnCount, columnNames.
 2.  **Key Statistics**: A summary of important stats for numerical and categorical columns. Title should be 'Key Statistics'.
 3.  **Missing Values**: Top columns with missing data and their counts. Title should be 'Missing Values'.
 4.  **Column Types**: Inferred data types for each column. Title should be 'Column Types'.
@@ -141,7 +140,18 @@ const analyzeDataFlow = ai.defineFlow(
       ? input.csvData.substring(0, MAX_PROMPT_LENGTH) + "\n... (data truncated)"
       : input.csvData;
 
-    const {output} = await prompt({ ...input, csvData: truncatedCsvData, rowCount });
-    return output!;
+    const {output: modelOutput} = await prompt({ ...input, csvData: truncatedCsvData, rowCount });
+
+    if (!modelOutput) {
+      throw new Error("The AI model did not return a valid analysis.");
+    }
+    
+    // Manually inject the pre-calculated rowCount to ensure it's always present and correct.
+    const finalOutput: AnalyzeDataOutput = {
+        ...modelOutput,
+        rowCount: rowCount,
+    };
+    
+    return finalOutput;
   }
 );
