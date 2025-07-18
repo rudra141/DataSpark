@@ -25,10 +25,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger,
   SidebarGroupAction,
 } from "@/components/ui/sidebar";
 import short from "short-uuid";
+import { UserButton } from "@clerk/nextjs";
 
 type HistoryItem = {
   id: string;
@@ -143,11 +143,14 @@ export default function FormulaPage() {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="h-7 w-7">
-              <Sparkles className="h-4 w-4 text-primary" />
-            </Button>
-            <div className="font-headline text-lg font-bold text-primary">FormulaFlow</div>
+           <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="h-7 w-7">
+                <Sparkles className="h-4 w-4 text-primary" />
+              </Button>
+              <div className="font-headline text-lg font-bold text-primary">FormulaFlow</div>
+            </div>
+            <UserButton afterSignOutUrl="/" />
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -214,7 +217,6 @@ export default function FormulaPage() {
             <div className="w-full max-w-4xl space-y-8">
                <div className="flex items-center justify-between">
                   <h1 className="text-2xl font-bold">Formula Generator</h1>
-                  <SidebarTrigger />
                 </div>
 
                 <Card>

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
+import { ClerkProvider } from '@clerk/nextjs'
+import { dark } from '@clerk/themes';
 
 export const metadata: Metadata = {
   title: 'FormulaFlow',
@@ -13,6 +15,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    <ClerkProvider
+      appearance={{
+        baseTheme: dark,
+      }}
+    >
       <html lang="en" className="dark">
         <head>
           <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -33,5 +40,6 @@ export default function RootLayout({
           </div>
         </body>
       </html>
+    </ClerkProvider>
   );
 }
