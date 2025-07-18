@@ -16,7 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+
 
 type AnalysisResult = AnalyzeDataOutput;
 type RecommendedVisualization = AnalysisResult['recommendedVisualizations'][0];
@@ -95,7 +95,7 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
       .catch((err) => {
         console.error('Failed to download chart', err);
       });
-  }, [visualization]);
+  }, [visualization.title]);
 
   const renderChart = () => {
     // Defensively check for visualization and its properties to prevent crashes
@@ -377,3 +377,6 @@ export default function DataAnalyzerPage() {
     </SidebarProvider>
   );
 }
+
+
+    
