@@ -16,7 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
-import { ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 type AnalysisResult = AnalyzeDataOutput;
 
@@ -73,7 +73,7 @@ const InsightCard = ({ title, stats }: { title: string; stats: { columnName: str
   </Card>
 );
 
-const ChartCard = ({ title, icon: Icon, children, onDownload }: { title: string; icon: React.ElementType, children: React.ReactNode, onDownload: () => void }) => (
+const ChartCardUI = ({ title, icon: Icon, children, onDownload }: { title: string; icon: React.ElementType, children: React.ReactNode, onDownload: () => void }) => (
   <Card>
     <CardHeader className="flex flex-row items-center justify-between">
       <div className="flex items-center gap-2">
@@ -106,6 +106,10 @@ export default function DataAnalyzerPage() {
     missingValues: useRef<HTMLDivElement>(null),
     columnTypes: useRef<HTMLDivElement>(null),
   };
+  
+  const chartConfig = {
+    // We can define colors and labels here for chart consistency later
+  };
 
   const handleDownloadChart = useCallback((chartName: keyof typeof chartRefs) => {
     const ref = chartRefs[chartName].current;
@@ -131,6 +135,11 @@ export default function DataAnalyzerPage() {
     if (selectedFile) {
       if (selectedFile.size > 1 * 1024 * 1024) { // 1MB limit
         setError("File is too large. Please upload a file smaller than 1MB.");
+        setFile(null);
+        return;
+      }
+      if (!selectedFile.name.endsWith('.csv')) {
+        setError("Invalid file type. Please upload a .csv file.");
         setFile(null);
         return;
       }
@@ -174,6 +183,8 @@ export default function DataAnalyzerPage() {
 
     return Object.entries(typeCounts).map(([name, value]) => ({ name, value }));
   }, [result]);
+  
+  const PIE_CHART_COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#AF19FF"];
 
   return (
     <SidebarProvider>
@@ -277,28 +288,36 @@ export default function DataAnalyzerPage() {
                 </div>
                 
                 <div ref={chartRefs.missingValues}>
-                  <ChartCard title="Missing Values" icon={BarChart2} onDownload={() => handleDownloadChart('missingValues')}>
-                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={result.missingValues.stats.filter(s => Number(s.value) > 0)} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="columnName" />
-                          <YAxis />
-                          <Tooltip content={<ChartTooltipContent />} />
-                          <Bar dataKey="value" name="Missing Count" fill="hsl(var(--primary))" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                  </ChartCard>
+                  <ChartCardUI title="Missing Values" icon={BarChart2} onDownload={() => handleDownloadChart('missingValues')}>
+                    <ChartContainer config={chartConfig} className="h-full w-full">
+                       <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={result.missingValues.stats.filter(s => Number(s.value) > 0)} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="columnName" />
+                            <YAxis />
+                            <Tooltip content={<ChartTooltipContent />} />
+                            <Bar dataKey="value" name="Missing Count" fill="hsl(var(--primary))" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                    </ChartContainer>
+                  </ChartCardUI>
                 </div>
 
                 <div ref={chartRefs.columnTypes}>
-                  <ChartCard title="Column Types" icon={PieChartIcon} onDownload={() => handleDownloadChart('columnTypes')}>
+                  <ChartCardUI title="Column Types" icon={PieChartIcon} onDownload={() => handleDownloadChart('columnTypes')}>
+                    <ChartContainer config={chartConfig} className="h-full w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <RechartsPieChart>
-                          <Tooltip content={<ChartTooltipContent />} />
-                          <RechartsPie data={pieChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="hsl(var(--primary))" label />
+                          <Tooltip content={<ChartTooltipContent nameKey="name" />} />
+                          <RechartsPie data={pieChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="hsl(var(--primary))" label>
+                             {pieChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
+                            ))}
+                          </RechartsPie>
                         </RechartsPieChart>
                       </ResponsiveContainer>
-                  </ChartCard>
+                    </ChartContainer>
+                  </ChartCardUI>
                  </div>
 
 
@@ -328,5 +347,3 @@ export default function DataAnalyzerPage() {
     </SidebarProvider>
   );
 }
-
-    
