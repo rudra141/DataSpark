@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -6,7 +7,7 @@ import { enhancePrompt } from "@/ai/flows/enhance-prompt";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles, Bot, History, Trash2, Star, AlertTriangle, ArrowRight, Zap } from "lucide-react";
+import { Loader2, Sparkles, Bot, History, Trash2, Star, AlertTriangle, Zap } from "lucide-react";
 import { CopyButton } from "@/components/copy-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -45,9 +46,9 @@ export default function FormulaPage() {
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [generationCount, setGenerationCount] = useState(0);
+  const [generationCount, setGenerationCount] = useState<number | null>(null);
 
-  const { user } = useUser();
+  const { user, isLoaded: isUserLoaded } = useUser();
 
   // Load history and generation count from localStorage
   useEffect(() => {
@@ -72,11 +73,14 @@ export default function FormulaPage() {
 
   // Save generation count to localStorage
   useEffect(() => {
-    if (!user) return;
+    if (!user || generationCount === null) return;
     localStorage.setItem(`generationCount_${user.id}`, generationCount.toString());
   }, [generationCount, user]);
 
-  const hasReachedLimit = useMemo(() => generationCount >= FREE_GENERATIONS_LIMIT, [generationCount]);
+  const hasReachedLimit = useMemo(() => {
+    if (generationCount === null) return false;
+    return generationCount >= FREE_GENERATIONS_LIMIT;
+  }, [generationCount]);
 
   const sortedHistory = useMemo(() => {
     return [...history].sort((a, b) => {
@@ -130,7 +134,7 @@ export default function FormulaPage() {
       setError("Please enter a description to generate a formula.");
       return;
     }
-
+    
     if (hasReachedLimit) {
       setError("You've reached your free generation limit. Please upgrade.");
       return;
@@ -144,7 +148,7 @@ export default function FormulaPage() {
       const output = await generateFormula({ description });
       setResult(output);
       addToHistory(description);
-      setGenerationCount(prev => prev + 1);
+      setGenerationCount(prev => (prev !== null ? prev + 1 : 1));
     } catch (err: any) {
       setError("An error occurred while generating the formula. Please try again later.");
       console.error(err);
@@ -160,6 +164,8 @@ export default function FormulaPage() {
       <Skeleton className="h-10 w-full" />
     </div>
   );
+
+  const isReady = isUserLoaded && generationCount !== null;
 
   return (
     <SidebarProvider>
@@ -240,13 +246,30 @@ export default function FormulaPage() {
             <div className="w-full max-w-4xl space-y-8">
                <div className="flex items-center justify-between">
                   <h1 className="text-2xl font-bold">Formula Generator</h1>
-                  <div className="text-sm text-muted-foreground">
-                    {Math.max(0, FREE_GENERATIONS_LIMIT - generationCount)} / {FREE_GENERATIONS_LIMIT} free generations remaining.
-                  </div>
+                   {isReady ? (
+                    <div className="text-sm text-muted-foreground">
+                      {Math.max(0, FREE_GENERATIONS_LIMIT - (generationCount || 0))} / {FREE_GENERATIONS_LIMIT} free generations remaining.
+                    </div>
+                  ) : (
+                    <Skeleton className="h-5 w-48" />
+                  )}
                 </div>
                 
-                <AnimatePresence>
-                {hasReachedLimit ? (
+                <AnimatePresence mode="wait">
+                {!isReady ? (
+                  <Card>
+                    <CardHeader>
+                      <Skeleton className="h-8 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </CardHeader>
+                    <CardContent>
+                      <Skeleton className="h-24 w-full" />
+                    </CardContent>
+                    <CardFooter>
+                       <Skeleton className="h-10 w-32 ml-auto" />
+                    </CardFooter>
+                  </Card>
+                ) : hasReachedLimit ? (
                   <motion.div
                     key="upgrade-card"
                     initial={{ opacity: 0, y: -20 }}
@@ -274,6 +297,8 @@ export default function FormulaPage() {
                 ) : (
                   <motion.div
                     key="form-card"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     exit={{ opacity: 0, y: -20 }}
                   >
                     <Card>
