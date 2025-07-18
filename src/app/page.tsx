@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowRight, Bot, Lightbulb, Zap } from "lucide-react";
+import { ArrowRight, Bot, BarChart, Calculator } from "lucide-react";
 import { motion } from "framer-motion";
 import { Header } from "@/components/header";
 
@@ -21,20 +21,9 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { x: -50, opacity: 0 },
+  hidden: { y: 20, opacity: 0 },
   visible: {
-    x: 0,
-    opacity: 1,
-    transition: {
-      duration: 0.6,
-      ease: "easeOut",
-    },
-  },
-};
-const itemVariantsRight = {
-  hidden: { x: 50, opacity: 0 },
-  visible: {
-    x: 0,
+    y: 0,
     opacity: 1,
     transition: {
       duration: 0.6,
@@ -45,19 +34,19 @@ const itemVariantsRight = {
 
 const features = [
   {
-    icon: <Zap className="h-8 w-8 text-primary" />,
-    title: "AI-Powered Accuracy",
-    description: "Our advanced AI understands complex requests to deliver precise and reliable formulas every time.",
+    icon: <Calculator className="h-8 w-8 text-primary" />,
+    title: "Formula Generator",
+    description: "Describe any calculation in plain English. Our AI generates the precise, ready-to-use formula for Excel and Google Sheets.",
   },
   {
-    icon: <Lightbulb className="h-8 w-8 text-primary" />,
-    title: "Instant Explanations",
-    description: "Don't just copy-paste. Understand how each formula works with clear, step-by-step breakdowns.",
+    icon: <BarChart className="h-8 w-8 text-primary" />,
+    title: "Data Analyzer",
+    description: "Upload your CSV file and instantly receive key statistics, actionable insights, and beautiful, AI-recommended charts.",
   },
   {
     icon: <Bot className="h-8 w-8 text-primary" />,
-    title: "Excel & Google Sheets",
-    description: "Get the right syntax for both major spreadsheet platforms, saving you time and effort.",
+    title: "Chat with Data",
+    description: "Go beyond static reports. Ask questions in natural language and get specific, contextual answers directly from your dataset.",
   },
 ];
 
@@ -88,7 +77,7 @@ const testimonials = [
 const CTAButton = () => (
     <Button size="lg" className="shadow-lg shadow-primary/20" asChild>
         <Link href="/formula">
-            Get Started <ArrowRight className="ml-2 h-5 w-5" />
+            Get Started for Free <ArrowRight className="ml-2 h-5 w-5" />
         </Link>
     </Button>
 );
@@ -109,13 +98,13 @@ export default function HomePage() {
             className="font-headline text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-fuchsia-500 to-orange-400"
             variants={itemVariants}
           >
-            Convert English to Excel Formulas Instantly
+            Your AI Assistant for Data & Spreadsheets
           </motion.h1>
           <motion.p
-            className="mt-6 max-w-2xl mx-auto text-xl text-muted-foreground"
+            className="mt-6 max-w-3xl mx-auto text-xl text-muted-foreground"
             variants={itemVariants}
           >
-            Stop Googling. Start generating. Describe any calculation in plain English and let our AI do the heavy lifting for you.
+            Generate formulas, analyze datasets, and chat with your data in plain English. Stop wrestling with data and start getting answers.
           </motion.p>
           <motion.div variants={itemVariants} className="mt-10">
              <CTAButton />
@@ -132,12 +121,12 @@ export default function HomePage() {
           variants={containerVariants}
         >
           <div className="text-center mb-12">
-            <h2 className="font-headline text-4xl font-bold">Why You'll Love FormulaFlow</h2>
-            <p className="mt-4 text-lg text-muted-foreground">Everything you need for spreadsheet mastery.</p>
+            <h2 className="font-headline text-4xl font-bold">A Full-Featured Data Toolkit</h2>
+            <p className="mt-4 text-lg text-muted-foreground">Everything you need for spreadsheet and data mastery.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <motion.div key={index} variants={itemVariantsRight}>
+              <motion.div key={index} variants={itemVariants}>
                 <Card className="h-full text-center bg-card/50 backdrop-blur-sm border-primary/10 hover:border-primary/30 transition-all duration-300 hover:shadow-primary/10 hover:shadow-lg">
                   <CardHeader>
                     <div className="mx-auto bg-primary/10 rounded-full p-3 w-fit">
@@ -164,24 +153,24 @@ export default function HomePage() {
           variants={containerVariants}
         >
           <div className="text-center mb-12">
-            <h2 className="font-headline text-4xl font-bold">Get Your Formula in 3 Easy Steps</h2>
-            <p className="mt-4 text-lg text-muted-foreground">It's as simple as one, two, three.</p>
+            <h2 className="font-headline text-4xl font-bold">Get Insights in Seconds</h2>
+            <p className="mt-4 text-lg text-muted-foreground">A simple, unified workflow for all your data tasks.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <motion.div variants={itemVariants}>
               <div className="text-5xl font-bold text-primary/50">1.</div>
-              <h3 className="font-headline text-xl mt-2">Describe</h3>
-              <p className="text-muted-foreground mt-2">Write down what you want to calculate in plain English.</p>
+              <h3 className="font-headline text-xl mt-2">Provide Input</h3>
+              <p className="text-muted-foreground mt-2">Describe your goal, upload a CSV, or ask a question.</p>
             </motion.div>
             <motion.div variants={itemVariants}>
               <div className="text-5xl font-bold text-primary/50">2.</div>
-              <h3 className="font-headline text-xl mt-2">Generate</h3>
-              <p className="text-muted-foreground mt-2">Click the button and let our AI create the perfect formula.</p>
+              <h3 className="font-headline text-xl mt-2">Let AI Work</h3>
+              <p className="text-muted-foreground mt-2">Our AI analyzes your request and data to find the solution.</p>
             </motion.div>
             <motion.div variants={itemVariants}>
               <div className="text-5xl font-bold text-primary/50">3.</div>
-              <h3 className="font-headline text-xl mt-2">Copy</h3>
-              <p className="text-muted-foreground mt-2">Instantly copy the formula for Excel or Google Sheets.</p>
+              <h3 className="font-headline text-xl mt-2">Get Results</h3>
+              <p className="text-muted-foreground mt-2">Receive formulas, charts, or direct answers instantly.</p>
             </motion.div>
           </div>
         </motion.section>
@@ -201,7 +190,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <motion.div key={index} variants={itemVariantsRight}>
+              <motion.div key={index} variants={itemVariants}>
                 <Card className="h-full flex flex-col justify-between bg-card/50 backdrop-blur-sm border-primary/10">
                   <CardContent className="pt-6">
                     <p className="italic text-foreground">"{testimonial.quote}"</p>
@@ -234,7 +223,7 @@ export default function HomePage() {
             Ready to Simplify Your Spreadsheets?
           </motion.h2>
           <motion.p className="mt-4 text-lg text-muted-foreground" variants={itemVariants}>
-            Boost your productivity and become a spreadsheet pro today.
+            Boost your productivity and become a data pro today.
           </motion.p>
           <motion.div variants={itemVariants} className="mt-8">
             <CTAButton />
