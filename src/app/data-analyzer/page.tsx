@@ -17,7 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
-import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer } from '@/components/ui/chart';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -113,7 +113,7 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey={indexKey} angle={-30} textAnchor="end" height={60} interval={0} tick={{ fontSize: 12 }} label={{ value: xAxisLabel, position: 'insideBottom', offset: -15 }} />
               <YAxis tick={{ fontSize: 12 }} label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }}/>
-              <Tooltip content={<ChartTooltipContent />} />
+              <Tooltip />
               <Bar dataKey={dataKey}>
                 {data.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
@@ -126,7 +126,7 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
         return (
           <ResponsiveContainer width="100%" height="100%">
             <RechartsPieChart>
-              <Tooltip content={<ChartTooltipContent nameKey={indexKey} />} />
+              <Tooltip />
               <Legend />
               <RechartsPie data={data} dataKey={dataKey} nameKey={indexKey} cx="50%" cy="50%" outerRadius={80} label>
                  {data.map((entry, index) => (
@@ -143,7 +143,7 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
               <CartesianGrid />
               <XAxis type="number" dataKey="x" name={xAxisLabel || 'x'} tick={{ fontSize: 12 }} label={{ value: xAxisLabel, position: 'insideBottom', offset: -10 }} />
               <YAxis type="number" dataKey="y" name={yAxisLabel || 'y'} tick={{ fontSize: 12 }} label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }} />
-              <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<ChartTooltipContent />} />
+              <Tooltip cursor={{ strokeDasharray: '3 3' }} />
               <Scatter name="Data" data={data} fill="hsl(var(--primary))" />
             </ScatterChart>
           </ResponsiveContainer>
@@ -155,7 +155,7 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey={indexKey} angle={-30} textAnchor="end" height={60} interval="preserveStartEnd" tick={{ fontSize: 12 }} label={{ value: xAxisLabel, position: 'insideBottom', offset: -15 }} />
               <YAxis tick={{ fontSize: 12 }} label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }}/>
-              <Tooltip content={<ChartTooltipContent />} />
+              <Tooltip />
               <Line type="monotone" dataKey={dataKey} stroke="hsl(var(--primary))" activeDot={{ r: 8 }} />
             </LineChart>
           </ResponsiveContainer>
