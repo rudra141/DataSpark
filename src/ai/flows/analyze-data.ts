@@ -85,8 +85,8 @@ The dataset has already been determined to have {{{rowCount}}} rows.
 
 Based on your analysis of the CSV data, generate a JSON output containing:
 1.  **Basic Info**: fileName, columnCount, columnNames.
-2.  **Key Statistics**: A summary of important stats for numerical and categorical columns. Title should be 'Key Statistics'.
-3.  **Missing Values**: Top columns with missing data and their counts. Title should be 'Missing Values'.
+2.  **Key Statistics**: A summary of important stats for numerical and categorical columns. Title should be 'Key Statistics'. If not applicable, omit this field.
+3.  **Missing Values**: Top columns with missing data and their counts. Title should be 'Missing Values'. If no missing values, omit this field.
 4.  **Column Types**: Inferred data types for each column. Title should be 'Column Types'.
 5.  **Recommended Visualizations**: This is the most important part. Analyze the data to find the most insightful stories and generate up to 4 of the most relevant visualizations to tell these stories. For each visualization, you **MUST** provide a \`title\`, \`caption\`, \`chartType\`, \`data\`, and \`config\`.
     -   Choose the best \`chartType\`: 'bar', 'pie', 'scatter', or 'line'.
@@ -127,7 +127,7 @@ const analyzeDataFlow = ai.defineFlow(
     inputSchema: AnalyzeDataInputSchema,
     outputSchema: AnalyzeDataOutputSchema,
   },
-  async input => {
+  async (input) => {
     // Pre-calculate row count to ensure accuracy.
     const rowCount = input.csvData.trim().split('\n').filter(line => line.trim() !== '').length - 1;
 
@@ -137,45 +137,50 @@ const analyzeDataFlow = ai.defineFlow(
       ? input.csvData.substring(0, MAX_PROMPT_LENGTH) + "\n... (data truncated)"
       : input.csvData;
 
-    const {output: modelOutput} = await prompt({ ...input, csvData: truncatedCsvData, rowCount });
+    const { output: modelOutput } = await prompt({ ...input, csvData: truncatedCsvData, rowCount });
 
     if (!modelOutput) {
       throw new Error("The AI model did not return a valid analysis.");
     }
-    
+
     // DEFINITIVE FIX: Manually build the final output and rigorously validate/filter each visualization.
-    
     const validVisualizations: z.infer<typeof RecommendedVisualizationSchema>[] = [];
     if (Array.isArray(modelOutput.recommendedVisualizations)) {
-      for (const vis of modelOutput.recommendedVisualizations) {
-        try {
-          // Use Zod to strictly parse each visualization. If it fails, it's caught and skipped.
-          const validatedVis = RecommendedVisualizationSchema.parse(vis);
-          validVisualizations.push(validatedVis);
-        } catch (error) {
+      modelOutput.recommendedVisualizations.forEach((vis, index) => {
+        // Use Zod's safeParse to validate each visualization object without throwing an error.
+        const validationResult = RecommendedVisualizationSchema.safeParse(vis);
+        
+        if (validationResult.success) {
+          // Only add the visualization if it's 100% compliant with the schema.
+          validVisualizations.push(validationResult.data);
+        } else {
           // Log the error for debugging but don't crash the application.
-          console.warn("Skipping malformed visualization object from AI:", error);
+          console.warn(`Skipping malformed visualization object at index ${index} from AI due to validation errors:`, validationResult.error.errors);
         }
-      }
+      });
     }
 
+    // Construct the final output object manually from AI response and validated data.
+    // This ensures no malformed data is ever passed to the final validation step.
     const finalOutput: AnalyzeDataOutput = {
-        fileName: modelOutput.fileName || input.fileName,
-        rowCount: rowCount, // Guaranteed to be correct.
-        columnCount: modelOutput.columnCount || 0,
-        columnNames: modelOutput.columnNames || [],
-        summaryStats: modelOutput.summaryStats,
-        missingValues: modelOutput.missingValues,
-        columnTypes: modelOutput.columnTypes,
-        recommendedVisualizations: validVisualizations, // Guaranteed to be an array of valid visualizations.
+      fileName: modelOutput.fileName || input.fileName,
+      rowCount: rowCount, // Guaranteed to be correct.
+      columnCount: modelOutput.columnCount || 0,
+      columnNames: modelOutput.columnNames || [],
+      summaryStats: modelOutput.summaryStats,
+      missingValues: modelOutput.missingValues,
+      columnTypes: modelOutput.columnTypes,
+      recommendedVisualizations: validVisualizations, // Guaranteed to be an array of valid visualizations.
     };
-    
+
     // Final validation of the entire object before returning.
+    // This should now always pass because we've cleaned the data.
     try {
       return AnalyzeDataOutputSchema.parse(finalOutput);
     } catch (error) {
-        console.error("Final output validation failed:", error);
-        throw new Error("Failed to construct a valid analysis object from the AI's response.");
+      console.error("Final output validation failed. This should not happen. Error:", error);
+      // As a last resort, throw an error if the manually constructed object is still invalid.
+      throw new Error("Failed to construct a valid analysis object from the AI's response.");
     }
   }
 );
