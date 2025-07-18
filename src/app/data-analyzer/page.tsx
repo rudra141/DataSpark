@@ -1,10 +1,13 @@
 
 'use client';
 
-import { useState, useMemo, ChangeEvent } from 'react';
+import { useState, useMemo, ChangeEvent, useRef, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, BarChart, FileUp, Loader2, Sparkles, Table } from 'lucide-react';
+import { AlertTriangle, BarChart, FileUp, Loader2, Sparkles, Table, Download, PieChart, BarChart2 } from 'lucide-react';
+import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Pie } from 'recharts';
+import { toPng } from 'html-to-image';
+
 
 import { analyzeData, type AnalyzeDataOutput } from '@/ai/flows/analyze-data';
 import { Button } from '@/components/ui/button';
@@ -13,32 +16,41 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 type AnalysisResult = AnalyzeDataOutput;
 
 const ResultSkeleton = () => (
-  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <Card className="lg:col-span-1">
-      <CardHeader>
-        <Skeleton className="h-6 w-3/4" />
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-5/6" />
-        <Skeleton className="h-4 w-full" />
-      </CardContent>
+  <div className="space-y-6">
+    <Card>
+       <CardHeader>
+          <Skeleton className="h-7 w-3/4" />
+           <Skeleton className="h-4 w-1/2" />
+       </CardHeader>
     </Card>
-    <Card className="lg:col-span-2">
-      <CardHeader>
-        <Skeleton className="h-6 w-1/2" />
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-5/6" />
-        <Skeleton className="h-4 w-4/6" />
-        <Skeleton className="h-4 w-full" />
-      </CardContent>
-    </Card>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <Card className="lg:col-span-1">
+        <CardHeader>
+          <Skeleton className="h-6 w-3/4" />
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+          <Skeleton className="h-4 w-full" />
+        </CardContent>
+      </Card>
+      <Card className="lg:col-span-2">
+        <CardHeader>
+          <Skeleton className="h-6 w-1/2" />
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+          <Skeleton className="h-4 w-4/6" />
+          <Skeleton className="h-4 w-full" />
+        </CardContent>
+      </Card>
+    </div>
   </div>
 );
 
@@ -50,15 +62,37 @@ const InsightCard = ({ title, stats }: { title: string; stats: { columnName: str
     <CardContent>
       <ul className="space-y-2 text-sm">
         {stats.map((stat, index) => (
-          <li key={index} className="flex justify-between">
+          <li key={index} className="flex justify-between items-center">
             <span className="font-medium text-muted-foreground truncate pr-4">{stat.columnName}</span>
-            <span className="font-mono text-foreground">{String(stat.value)}</span>
+            <span className="font-mono text-foreground bg-muted/50 px-2 py-0.5 rounded-md">{String(stat.value)}</span>
           </li>
         ))}
+        {stats.length === 0 && <p className="text-muted-foreground">No data available.</p>}
       </ul>
     </CardContent>
   </Card>
 );
+
+const ChartCard = ({ title, icon: Icon, children, onDownload }: { title: string; icon: React.ElementType, children: React.ReactNode, onDownload: () => void }) => (
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between">
+      <div className="flex items-center gap-2">
+        <Icon className="h-5 w-5 text-primary" />
+        <CardTitle className="text-lg">{title}</CardTitle>
+      </div>
+       <Button variant="ghost" size="icon" onClick={onDownload} className="h-8 w-8">
+        <Download className="h-4 w-4" />
+        <span className="sr-only">Download Chart</span>
+      </Button>
+    </CardHeader>
+    <CardContent>
+      <div className="h-64 w-full">
+        {children}
+      </div>
+    </CardContent>
+  </Card>
+);
+
 
 export default function DataAnalyzerPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -67,6 +101,30 @@ export default function DataAnalyzerPage() {
   const [error, setError] = useState<string | null>(null);
 
   const { isLoaded: isUserLoaded } = useUser();
+  
+  const chartRefs = {
+    missingValues: useRef<HTMLDivElement>(null),
+    columnTypes: useRef<HTMLDivElement>(null),
+  };
+
+  const handleDownloadChart = useCallback((chartName: keyof typeof chartRefs) => {
+    const ref = chartRefs[chartName].current;
+    if (ref === null) {
+      return;
+    }
+    toPng(ref, { cacheBust: true })
+      .then((dataUrl) => {
+        const link = document.createElement('a');
+        link.download = `${chartName}_chart.png`;
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((err) => {
+        console.error('Failed to download chart', err);
+        setError('Could not download chart. Please try again.');
+      });
+  }, [chartRefs]);
+
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -105,6 +163,17 @@ export default function DataAnalyzerPage() {
   };
 
   const isReady = isUserLoaded;
+  
+  const pieChartData = useMemo(() => {
+    if (!result) return [];
+    const typeCounts = result.columnTypes.stats.reduce((acc, curr) => {
+      const type = String(curr.value);
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(typeCounts).map(([name, value]) => ({ name, value }));
+  }, [result]);
 
   return (
     <SidebarProvider>
@@ -117,7 +186,7 @@ export default function DataAnalyzerPage() {
               Data Analyzer
             </h1>
             <p className="text-muted-foreground mt-2">
-              Upload a CSV file to get instant insights and statistics about your data.
+              Upload a CSV file to get instant insights, statistics, and visualizations about your data.
             </p>
           </header>
 
@@ -137,7 +206,7 @@ export default function DataAnalyzerPage() {
                   <CardHeader>
                     <CardTitle>Upload Your Data File</CardTitle>
                     <CardDescription>
-                      Select a .csv or .xlsx file from your computer. Max file size: 1MB.
+                      Select a .csv file from your computer. Max file size: 1MB.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -149,7 +218,7 @@ export default function DataAnalyzerPage() {
                             <span>{file ? file.name : 'Click to select a file'}</span>
                           </div>
                         </div>
-                        <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv,.xlsx" />
+                        <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv" />
                       </label>
                       <Button onClick={handleAnalyze} disabled={!file || isLoading} className="w-full sm:w-auto">
                         {isLoading ? (
@@ -203,9 +272,35 @@ export default function DataAnalyzerPage() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <InsightCard title={result.summaryStats.title} stats={result.summaryStats.stats} />
-                  <InsightCard title={result.missingValues.title} stats={result.missingValues.stats} />
+                  <InsightCard title={result.missingValues.title} stats={result.missingValues.stats.filter(s => Number(s.value) > 0)} />
                   <InsightCard title={result.columnTypes.title} stats={result.columnTypes.stats} />
                 </div>
+                
+                <div ref={chartRefs.missingValues}>
+                  <ChartCard title="Missing Values" icon={BarChart2} onDownload={() => handleDownloadChart('missingValues')}>
+                     <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={result.missingValues.stats.filter(s => Number(s.value) > 0)} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="columnName" />
+                          <YAxis />
+                          <Tooltip content={<ChartTooltipContent />} />
+                          <Bar dataKey="value" name="Missing Count" fill="hsl(var(--primary))" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                  </ChartCard>
+                </div>
+
+                <div ref={chartRefs.columnTypes}>
+                  <ChartCard title="Column Types" icon={PieChart} onDownload={() => handleDownloadChart('columnTypes')}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Tooltip content={<ChartTooltipContent />} />
+                          <Pie data={pieChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="hsl(var(--primary))" label />
+                        </PieChart>
+                      </ResponsiveContainer>
+                  </ChartCard>
+                 </div>
+
 
                 <Card>
                   <CardHeader>

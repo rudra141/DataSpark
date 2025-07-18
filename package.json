@@ -60,7 +60,8 @@
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.24.2",
     "@genkit-ai/googleai": "^1.14.1",
-    "@genkit-ai/next": "^1.14.1"
+    "@genkit-ai/next": "^1.14.1",
+    "html-to-image": "^1.11.11"
   },
   "devDependencies": {
     "@types/node": "^20",
