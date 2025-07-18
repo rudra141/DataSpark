@@ -106,7 +106,7 @@ export default function HomePage() {
           variants={containerVariants}
         >
           <motion.h1
-            className="font-headline text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-primary via-fuchsia-500 to-orange-400"
+            className="font-headline text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-fuchsia-500 to-orange-400"
             variants={itemVariants}
           >
             Convert English to Excel Formulas Instantly
