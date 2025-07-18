@@ -1,9 +1,9 @@
-
 "use client";
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { SignedIn, SignedOut, UserButton, SignUpButton, SignInButton } from "@clerk/nextjs";
+import { ThemeToggle } from "./theme-toggle";
 
 export function Header() {
   return (
@@ -12,7 +12,8 @@ export function Header() {
         FormulaFlow
       </Link>
       <div className="flex items-center gap-4">
-         <SignedOut>
+        <ThemeToggle />
+        <SignedOut>
           <Button variant="ghost" asChild>
               <SignInButton />
           </Button>
