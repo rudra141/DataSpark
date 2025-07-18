@@ -89,7 +89,7 @@ Based on your analysis of the CSV data, generate a JSON output containing:
 2.  **Key Statistics**: A summary of important stats for numerical and categorical columns. Title should be 'Key Statistics'.
 3.  **Missing Values**: Top columns with missing data and their counts. Title should be 'Missing Values'.
 4.  **Column Types**: Inferred data types for each column. Title should be 'Column Types'.
-5.  **Recommended Visualizations**: This is the most important part. Analyze the data to find the most insightful stories and generate up to 4 of the most relevant visualizations to tell these stories. For each visualization:
+5.  **Recommended Visualizations**: This is the most important part. Analyze the data to find the most insightful stories and generate up to 4 of the most relevant visualizations to tell these stories. For each visualization, you **MUST** provide a \`title\`, \`caption\`, \`chartType\`, \`data\`, and \`config\`.
     -   Choose the best \`chartType\`: 'bar', 'pie', 'scatter', or 'line'.
     -   Provide a clear \`title\` and a concise \`caption\` explaining the insight.
     -   Generate the \`data\` array needed to render the chart with Recharts, adhering to the ChartDataItemSchema.
@@ -146,9 +146,10 @@ const analyzeDataFlow = ai.defineFlow(
       throw new Error("The AI model did not return a valid analysis.");
     }
     
-    // Filter out any visualizations that are missing required fields to prevent crashes.
+    // DEFINITIVE FIX: Filter out any visualizations that are missing required fields to prevent crashes.
+    // This is a robust way to handle model inconsistencies.
     const validVisualizations = (modelOutput.recommendedVisualizations || []).filter(vis => 
-        vis.title && vis.caption && vis.chartType && vis.data && vis.config
+        vis && vis.title && vis.caption && vis.chartType && vis.data && vis.config
     );
 
     // Manually inject the pre-calculated rowCount to ensure it's always present and correct.
