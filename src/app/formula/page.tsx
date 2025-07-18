@@ -6,7 +6,7 @@ import { enhancePrompt } from "@/ai/flows/enhance-prompt";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles, Bot, History, Trash2, Star } from "lucide-react";
+import { Loader2, Sparkles, Bot, History, Trash2, Star, AlertTriangle, ArrowRight } from "lucide-react";
 import { CopyButton } from "@/components/copy-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -27,12 +27,16 @@ import {
   SidebarGroupAction,
 } from "@/components/ui/sidebar";
 import short from "short-uuid";
+import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 
 type HistoryItem = {
   id: string;
   query: string;
   isFavorite?: boolean;
 };
+
+const FREE_GENERATIONS_LIMIT = 3;
 
 export default function FormulaPage() {
   const [description, setDescription] = useState("");
@@ -41,25 +45,38 @@ export default function FormulaPage() {
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [generationCount, setGenerationCount] = useState(0);
 
-  useEffect(() => {
-    try {
-      const storedHistory = localStorage.getItem("formulaHistory");
-      if (storedHistory) {
-        setHistory(JSON.parse(storedHistory));
-      }
-    } catch (error) {
-      console.error("Failed to load history from localStorage", error);
-    }
-  }, []);
+  const { user } = useUser();
 
+  // Load history and generation count from localStorage
   useEffect(() => {
-    try {
-      localStorage.setItem("formulaHistory", JSON.stringify(history));
-    } catch (error) {
-      console.error("Failed to save history to localStorage", error);
+    if (!user) return;
+    const storedHistory = localStorage.getItem(`formulaHistory_${user.id}`);
+    if (storedHistory) {
+      setHistory(JSON.parse(storedHistory));
     }
-  }, [history]);
+    const storedCount = localStorage.getItem(`generationCount_${user.id}`);
+    if (storedCount) {
+      setGenerationCount(parseInt(storedCount, 10));
+    } else {
+      setGenerationCount(0);
+    }
+  }, [user]);
+
+  // Save history to localStorage
+  useEffect(() => {
+    if (!user) return;
+    localStorage.setItem(`formulaHistory_${user.id}`, JSON.stringify(history));
+  }, [history, user]);
+
+  // Save generation count to localStorage
+  useEffect(() => {
+    if (!user) return;
+    localStorage.setItem(`generationCount_${user.id}`, generationCount.toString());
+  }, [generationCount, user]);
+
+  const hasReachedLimit = generationCount >= FREE_GENERATIONS_LIMIT;
 
   const sortedHistory = useMemo(() => {
     return [...history].sort((a, b) => {
@@ -93,6 +110,10 @@ export default function FormulaPage() {
 
   const handleEnhancePrompt = async () => {
     if (!description) return;
+    if (hasReachedLimit) {
+      setError("You've reached your free generation limit. Please upgrade.");
+      return;
+    }
     setIsEnhancing(true);
     setError(null);
     try {
@@ -113,6 +134,11 @@ export default function FormulaPage() {
       return;
     }
 
+    if (hasReachedLimit) {
+      setError("You've reached your free generation limit. Please upgrade.");
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     setResult(null);
@@ -121,6 +147,7 @@ export default function FormulaPage() {
       const output = await generateFormula({ description });
       setResult(output);
       addToHistory(description);
+      setGenerationCount(prev => prev + 1);
     } catch (err: any) {
       setError("An error occurred while generating the formula. Please try again later.");
       console.error(err);
@@ -143,9 +170,11 @@ export default function FormulaPage() {
         <SidebarHeader>
            <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="h-7 w-7">
-                <Sparkles className="h-4 w-4 text-primary" />
-              </Button>
+              <Link href="/">
+                <Button variant="ghost" size="icon" className="h-7 w-7">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                </Button>
+              </Link>
               <div className="font-headline text-lg font-bold text-primary">FormulaFlow</div>
             </div>
           </div>
@@ -214,7 +243,25 @@ export default function FormulaPage() {
             <div className="w-full max-w-4xl space-y-8">
                <div className="flex items-center justify-between">
                   <h1 className="text-2xl font-bold">Formula Generator</h1>
+                  <div className="text-sm text-muted-foreground">
+                    {FREE_GENERATIONS_LIMIT - generationCount} / {FREE_GENERATIONS_LIMIT} free generations remaining.
+                  </div>
                 </div>
+
+                {hasReachedLimit && (
+                   <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                      <Alert variant="destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>Free Limit Reached</AlertTitle>
+                        <AlertDescription className="flex justify-between items-center">
+                          You've used all your free generations. Please upgrade to continue.
+                          <Button variant="outline" size="sm" asChild>
+                            <Link href="/pricing">Upgrade <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                          </Button>
+                        </AlertDescription>
+                      </Alert>
+                    </motion.div>
+                )}
 
                 <Card>
                     <CardHeader>
@@ -239,7 +286,7 @@ export default function FormulaPage() {
                               exit={{ opacity: 0, y: 10 }}
                               className="absolute bottom-5 right-5"
                             >
-                              <Button type="button" size="sm" variant="ghost" onClick={handleEnhancePrompt} disabled={isEnhancing}>
+                              <Button type="button" size="sm" variant="ghost" onClick={handleEnhancePrompt} disabled={isEnhancing || hasReachedLimit}>
                                 {isEnhancing ? (
                                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 ) : (
@@ -255,7 +302,7 @@ export default function FormulaPage() {
                       <Button
                         type="submit"
                         onClick={handleSubmit}
-                        disabled={isLoading || isEnhancing}
+                        disabled={isLoading || isEnhancing || hasReachedLimit}
                         className="w-full sm:w-auto ml-auto"
                       >
                           {isLoading ? (
@@ -273,7 +320,7 @@ export default function FormulaPage() {
                 </Card>
 
                 <AnimatePresence>
-                    {error && (
+                    {error && !hasReachedLimit && (
                         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                             <Alert variant="destructive">
                                 <AlertTitle>Error</AlertTitle>
