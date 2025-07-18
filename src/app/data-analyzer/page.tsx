@@ -125,7 +125,11 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
               <XAxis dataKey={indexKey} angle={-30} textAnchor="end" height={60} interval={0} tick={{ fontSize: 12 }} label={{ value: xAxisLabel, position: 'insideBottom', offset: -15 }} />
               <YAxis tick={{ fontSize: 12 }} label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }}/>
               <Tooltip content={<ChartTooltipContent />} />
-              <Bar dataKey={dataKey} fill="hsl(var(--primary))" />
+              <Bar dataKey={dataKey}>
+                {data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         );
