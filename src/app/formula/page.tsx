@@ -52,29 +52,36 @@ export default function FormulaPage() {
 
   // Load history and generation count from localStorage
   useEffect(() => {
-    if (!user) return;
-    const storedHistory = localStorage.getItem(`formulaHistory_${user.id}`);
-    if (storedHistory) {
-      setHistory(JSON.parse(storedHistory));
-    }
-    const storedCount = localStorage.getItem(`generationCount_${user.id}`);
-    if (storedCount) {
-      setGenerationCount(parseInt(storedCount, 10));
-    } else {
+    if (isUserLoaded && user) {
+      const storedHistory = localStorage.getItem(`formulaHistory_${user.id}`);
+      if (storedHistory) {
+        setHistory(JSON.parse(storedHistory));
+      }
+      const storedCount = localStorage.getItem(`generationCount_${user.id}`);
+      if (storedCount) {
+        setGenerationCount(parseInt(storedCount, 10));
+      } else {
+        setGenerationCount(0);
+      }
+    } else if (isUserLoaded && !user) {
+      // Handle logged out state, maybe clear history or set default
+      setHistory([]);
       setGenerationCount(0);
     }
-  }, [user]);
+  }, [isUserLoaded, user]);
 
   // Save history to localStorage
   useEffect(() => {
-    if (!user) return;
-    localStorage.setItem(`formulaHistory_${user.id}`, JSON.stringify(history));
+    if (user) {
+      localStorage.setItem(`formulaHistory_${user.id}`, JSON.stringify(history));
+    }
   }, [history, user]);
 
   // Save generation count to localStorage
   useEffect(() => {
-    if (!user || generationCount === null) return;
-    localStorage.setItem(`generationCount_${user.id}`, generationCount.toString());
+    if (user && generationCount !== null) {
+      localStorage.setItem(`generationCount_${user.id}`, generationCount.toString());
+    }
   }, [generationCount, user]);
 
   const hasReachedLimit = useMemo(() => {
@@ -188,7 +195,7 @@ export default function FormulaPage() {
               <History />
               History
             </SidebarGroupLabel>
-            {history.length > 0 && (
+            {isReady && history.length > 0 && (
               <SidebarGroupAction asChild>
                 <button onClick={clearHistory} title="Clear history">
                   <Trash2 />
@@ -196,7 +203,13 @@ export default function FormulaPage() {
               </SidebarGroupAction>
             )}
             <SidebarMenu>
-              {sortedHistory.length > 0 ? (
+              {!isReady ? (
+                <div className="space-y-2 px-2">
+                  <Skeleton className="h-7 w-full" />
+                  <Skeleton className="h-7 w-full" />
+                  <Skeleton className="h-7 w-full" />
+                </div>
+              ) : sortedHistory.length > 0 ? (
                 sortedHistory.map((item) => (
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
