@@ -4,8 +4,8 @@
 import { useState, useMemo, ChangeEvent, useRef, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, BarChart, FileUp, Loader2, Sparkles, Table, Download, PieChart, BarChart2 } from 'lucide-react';
-import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Pie as RechartsPie } from 'recharts';
+import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download, PieChart as PieChartIcon, BarChart2 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell } from 'recharts';
 import { toPng } from 'html-to-image';
 
 
@@ -182,7 +182,7 @@ export default function DataAnalyzerPage() {
         <div className="w-full max-w-6xl space-y-8">
           <header>
             <h1 className="text-3xl font-bold flex items-center gap-3">
-              <BarChart className="h-8 w-8 text-primary" />
+              <BarChartIcon className="h-8 w-8 text-primary" />
               Data Analyzer
             </h1>
             <p className="text-muted-foreground mt-2">
@@ -291,12 +291,12 @@ export default function DataAnalyzerPage() {
                 </div>
 
                 <div ref={chartRefs.columnTypes}>
-                  <ChartCard title="Column Types" icon={PieChart} onDownload={() => handleDownloadChart('columnTypes')}>
+                  <ChartCard title="Column Types" icon={PieChartIcon} onDownload={() => handleDownloadChart('columnTypes')}>
                       <ResponsiveContainer width="100%" height="100%">
-                        <RechartsPie>
+                        <RechartsPieChart>
                           <Tooltip content={<ChartTooltipContent />} />
                           <RechartsPie data={pieChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="hsl(var(--primary))" label />
-                        </RechartsPie>
+                        </RechartsPieChart>
                       </ResponsiveContainer>
                   </ChartCard>
                  </div>
@@ -328,3 +328,5 @@ export default function DataAnalyzerPage() {
     </SidebarProvider>
   );
 }
+
+    
