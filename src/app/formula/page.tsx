@@ -6,7 +6,7 @@ import { enhancePrompt } from "@/ai/flows/enhance-prompt";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles, Bot, History, Trash2, Star, AlertTriangle, ArrowRight } from "lucide-react";
+import { Loader2, Sparkles, Bot, History, Trash2, Star, AlertTriangle, ArrowRight, Zap } from "lucide-react";
 import { CopyButton } from "@/components/copy-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -76,7 +76,7 @@ export default function FormulaPage() {
     localStorage.setItem(`generationCount_${user.id}`, generationCount.toString());
   }, [generationCount, user]);
 
-  const hasReachedLimit = generationCount >= FREE_GENERATIONS_LIMIT;
+  const hasReachedLimit = useMemo(() => generationCount >= FREE_GENERATIONS_LIMIT, [generationCount]);
 
   const sortedHistory = useMemo(() => {
     return [...history].sort((a, b) => {
@@ -109,11 +109,8 @@ export default function FormulaPage() {
   };
 
   const handleEnhancePrompt = async () => {
-    if (!description) return;
-    if (hasReachedLimit) {
-      setError("You've reached your free generation limit. Please upgrade.");
-      return;
-    }
+    if (!description || hasReachedLimit) return;
+    
     setIsEnhancing(true);
     setError(null);
     try {
@@ -244,85 +241,106 @@ export default function FormulaPage() {
                <div className="flex items-center justify-between">
                   <h1 className="text-2xl font-bold">Formula Generator</h1>
                   <div className="text-sm text-muted-foreground">
-                    {FREE_GENERATIONS_LIMIT - generationCount} / {FREE_GENERATIONS_LIMIT} free generations remaining.
+                    {Math.max(0, FREE_GENERATIONS_LIMIT - generationCount)} / {FREE_GENERATIONS_LIMIT} free generations remaining.
                   </div>
                 </div>
-
-                {hasReachedLimit && (
-                   <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                      <Alert variant="destructive">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>Free Limit Reached</AlertTitle>
-                        <AlertDescription className="flex justify-between items-center">
-                          You've used all your free generations. Please upgrade to continue.
-                          <Button variant="outline" size="sm" asChild>
-                            <Link href="/pricing">Upgrade <ArrowRight className="ml-2 h-4 w-4" /></Link>
-                          </Button>
-                        </AlertDescription>
-                      </Alert>
-                    </motion.div>
-                )}
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-2xl">Describe Your Calculation</CardTitle>
+                
+                <AnimatePresence>
+                {hasReachedLimit ? (
+                  <motion.div
+                    key="upgrade-card"
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <Card className="text-center bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg shadow-primary/10">
+                      <CardHeader>
+                        <CardTitle className="text-2xl font-headline">You've Used Your Free Generations!</CardTitle>
                         <CardDescription>
-                          Enter a plain English description of what you want to calculate. Be as specific as possible for the best results.
+                          Upgrade to a Pro plan to continue creating unlimited formulas.
                         </CardDescription>
-                    </CardHeader>
-                    <CardContent className="relative">
-                      <Textarea
-                        placeholder="e.g., 'Sum of column A if column B is 'Completed' and column C is after today'"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        className="min-h-[120px] text-base"
-                        required
-                        />
-                         <AnimatePresence>
-                          {description.trim().length > 10 && (
-                            <motion.div
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: 10 }}
-                              className="absolute bottom-5 right-5"
-                            >
-                              <Button type="button" size="sm" variant="ghost" onClick={handleEnhancePrompt} disabled={isEnhancing || hasReachedLimit}>
-                                {isEnhancing ? (
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Bot className="mr-2 h-4 w-4" />
-                                )}
-                                Enhance
-                              </Button>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                    </CardContent>
-                    <CardFooter>
-                      <Button
-                        type="submit"
-                        onClick={handleSubmit}
-                        disabled={isLoading || isEnhancing || hasReachedLimit}
-                        className="w-full sm:w-auto ml-auto"
-                      >
-                          {isLoading ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="mr-2 h-4 w-4" /> Generate Formula
-                            </>
-                          )}
+                      </CardHeader>
+                      <CardContent>
+                        <Button size="lg" asChild>
+                          <Link href="/pricing">
+                            <Zap className="mr-2 h-5 w-5" /> Upgrade to Pro
+                          </Link>
                         </Button>
-                    </CardFooter>
-                </Card>
+                      </CardContent>
+                      <CardFooter className="flex-col text-xs text-muted-foreground">
+                        <p>Unlock 100 generations for just ₹19/month or go unlimited for ₹99/year.</p>
+                      </CardFooter>
+                    </Card>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="form-card"
+                    exit={{ opacity: 0, y: -20 }}
+                  >
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-2xl">Describe Your Calculation</CardTitle>
+                            <CardDescription>
+                              Enter a plain English description of what you want to calculate. Be as specific as possible for the best results.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="relative">
+                          <Textarea
+                            placeholder="e.g., 'Sum of column A if column B is 'Completed' and column C is after today'"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            className="min-h-[120px] text-base"
+                            required
+                            />
+                             <AnimatePresence>
+                              {description.trim().length > 10 && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: 10 }}
+                                  className="absolute bottom-5 right-5"
+                                >
+                                  <Button type="button" size="sm" variant="ghost" onClick={handleEnhancePrompt} disabled={isEnhancing}>
+                                    {isEnhancing ? (
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Bot className="mr-2 h-4 w-4" />
+                                    )}
+                                    Enhance
+                                  </Button>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                        </CardContent>
+                        <CardFooter>
+                          <Button
+                            type="submit"
+                            onClick={handleSubmit}
+                            disabled={isLoading || isEnhancing}
+                            className="w-full sm:w-auto ml-auto"
+                          >
+                              {isLoading ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Generating...
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles className="mr-2 h-4 w-4" /> Generate Formula
+                                </>
+                              )}
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                  </motion.div>
+                )}
+                </AnimatePresence>
+
 
                 <AnimatePresence>
                     {error && !hasReachedLimit && (
                         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                             <Alert variant="destructive">
+                                <AlertTriangle className="h-4 w-4" />
                                 <AlertTitle>Error</AlertTitle>
                                 <AlertDescription>{error}</AlertDescription>
                             </Alert>
