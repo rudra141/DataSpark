@@ -5,7 +5,7 @@ import { useState, useRef, useCallback, ChangeEvent } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, Scatter, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line } from 'recharts';
 import { toPng } from 'html-to-image';
 
 
