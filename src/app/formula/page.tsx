@@ -50,39 +50,40 @@ export default function FormulaPage() {
 
   const { user, isLoaded: isUserLoaded } = useUser();
 
-  // Load history and generation count from localStorage
+  // Load and save data from/to localStorage
   useEffect(() => {
     if (isUserLoaded && user) {
+      // Load from localStorage
       const storedHistory = localStorage.getItem(`formulaHistory_${user.id}`);
       if (storedHistory) {
-        setHistory(JSON.parse(storedHistory));
+        try {
+          setHistory(JSON.parse(storedHistory));
+        } catch (e) {
+          console.error("Failed to parse history from localStorage", e);
+          setHistory([]);
+        }
       }
+
       const storedCount = localStorage.getItem(`generationCount_${user.id}`);
-      if (storedCount) {
-        setGenerationCount(parseInt(storedCount, 10));
-      } else {
-        setGenerationCount(0);
-      }
+      setGenerationCount(storedCount ? parseInt(storedCount, 10) : 0);
     } else if (isUserLoaded && !user) {
-      // Handle logged out state, maybe clear history or set default
+      // Handle logged out state
       setHistory([]);
       setGenerationCount(0);
     }
   }, [isUserLoaded, user]);
 
-  // Save history to localStorage
   useEffect(() => {
-    if (user) {
-      localStorage.setItem(`formulaHistory_${user.id}`, JSON.stringify(history));
+    // Save to localStorage
+    if (user?.id) {
+      if (history.length > 0) {
+        localStorage.setItem(`formulaHistory_${user.id}`, JSON.stringify(history));
+      }
+      if (generationCount !== null) {
+        localStorage.setItem(`generationCount_${user.id}`, generationCount.toString());
+      }
     }
-  }, [history, user]);
-
-  // Save generation count to localStorage
-  useEffect(() => {
-    if (user && generationCount !== null) {
-      localStorage.setItem(`generationCount_${user.id}`, generationCount.toString());
-    }
-  }, [generationCount, user]);
+  }, [history, generationCount, user]);
 
   const hasReachedLimit = useMemo(() => {
     if (generationCount === null) return false;
@@ -117,6 +118,9 @@ export default function FormulaPage() {
 
   const clearHistory = () => {
     setHistory([]);
+    if (user?.id) {
+      localStorage.removeItem(`formulaHistory_${user.id}`);
+    }
   };
 
   const handleEnhancePrompt = async () => {
