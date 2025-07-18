@@ -4,7 +4,7 @@
 import { useState, useMemo, ChangeEvent, useRef, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download, PieChart as PieChartIcon, BarChart2 } from 'lucide-react';
+import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download, PieChart as PieChartIcon, BarChart2, Link as LinkIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell } from 'recharts';
 import { toPng } from 'html-to-image';
 
@@ -54,7 +54,7 @@ const ResultSkeleton = () => (
   </div>
 );
 
-const InsightCard = ({ title, stats }: { title: string; stats: { columnName: string; value: string | number }[] }) => (
+const InsightCard = ({ title, stats, emptyText = "No data available." }: { title: string; stats: { columnName: string; value: string | number }[], emptyText?: string }) => (
   <Card>
     <CardHeader>
       <CardTitle className="text-lg">{title}</CardTitle>
@@ -62,12 +62,12 @@ const InsightCard = ({ title, stats }: { title: string; stats: { columnName: str
     <CardContent>
       <ul className="space-y-2 text-sm">
         {stats.map((stat, index) => (
-          <li key={index} className="flex justify-between items-center">
-            <span className="font-medium text-muted-foreground truncate pr-4">{stat.columnName}</span>
-            <span className="font-mono text-foreground bg-muted/50 px-2 py-0.5 rounded-md">{String(stat.value)}</span>
+          <li key={index} className="flex justify-between items-center gap-2">
+            <span className="font-medium text-muted-foreground truncate pr-2">{stat.columnName}</span>
+            <span className="font-mono text-foreground bg-muted/50 px-2 py-0.5 rounded-md text-right">{String(stat.value)}</span>
           </li>
         ))}
-        {stats.length === 0 && <p className="text-muted-foreground">No data available.</p>}
+        {stats.length === 0 && <p className="text-muted-foreground">{emptyText}</p>}
       </ul>
     </CardContent>
   </Card>
@@ -105,6 +105,7 @@ export default function DataAnalyzerPage() {
   const chartRefs = {
     missingValues: useRef<HTMLDivElement>(null),
     columnTypes: useRef<HTMLDivElement>(null),
+    correlations: useRef<HTMLDivElement>(null),
   };
   
   const chartConfig = {
@@ -119,7 +120,7 @@ export default function DataAnalyzerPage() {
     toPng(ref, { cacheBust: true })
       .then((dataUrl) => {
         const link = document.createElement('a');
-        link.download = `${chartName}_chart.png`;
+        link.download = `${result?.fileName?.replace('.csv', '')}_${chartName}.png`;
         link.href = dataUrl;
         link.click();
       })
@@ -127,7 +128,7 @@ export default function DataAnalyzerPage() {
         console.error('Failed to download chart', err);
         setError('Could not download chart. Please try again.');
       });
-  }, [chartRefs]);
+  }, [chartRefs, result?.fileName]);
 
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -281,45 +282,64 @@ export default function DataAnalyzerPage() {
                    </CardHeader>
                 </Card>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <InsightCard title={result.summaryStats.title} stats={result.summaryStats.stats} />
-                  <InsightCard title={result.missingValues.title} stats={result.missingValues.stats.filter(s => Number(s.value) > 0)} />
+                  <InsightCard title={result.missingValues.title} stats={result.missingValues.stats.filter(s => Number(s.value) > 0)} emptyText="No missing values found." />
                   <InsightCard title={result.columnTypes.title} stats={result.columnTypes.stats} />
+                  <InsightCard title={result.outlierAnalysis.title} stats={result.outlierAnalysis.stats} emptyText="No significant outliers detected." />
                 </div>
-                
-                <div ref={chartRefs.missingValues}>
-                  <ChartCardUI title="Missing Values" icon={BarChart2} onDownload={() => handleDownloadChart('missingValues')}>
-                    <ChartContainer config={chartConfig} className="h-full w-full">
-                       <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={result.missingValues.stats.filter(s => Number(s.value) > 0)} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="columnName" />
-                            <YAxis />
-                            <Tooltip content={<ChartTooltipContent />} />
-                            <Bar dataKey="value" name="Missing Count" fill="hsl(var(--primary))" />
-                          </BarChart>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div ref={chartRefs.missingValues}>
+                    <ChartCardUI title="Missing Values" icon={BarChart2} onDownload={() => handleDownloadChart('missingValues')}>
+                      <ChartContainer config={chartConfig} className="h-full w-full">
+                         <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={result.missingValues.stats.filter(s => Number(s.value) > 0)} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="columnName" />
+                              <YAxis />
+                              <Tooltip content={<ChartTooltipContent />} />
+                              <Bar dataKey="value" name="Missing Count" fill="hsl(var(--primary))" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                      </ChartContainer>
+                    </ChartCardUI>
+                  </div>
+
+                  <div ref={chartRefs.columnTypes}>
+                    <ChartCardUI title="Column Types" icon={PieChartIcon} onDownload={() => handleDownloadChart('columnTypes')}>
+                      <ChartContainer config={chartConfig} className="h-full w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <RechartsPieChart>
+                            <Tooltip content={<ChartTooltipContent nameKey="name" />} />
+                            <RechartsPie data={pieChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="hsl(var(--primary))" label>
+                               {pieChartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
+                              ))}
+                            </RechartsPie>
+                          </RechartsPieChart>
                         </ResponsiveContainer>
-                    </ChartContainer>
-                  </ChartCardUI>
+                      </ChartContainer>
+                    </ChartCardUI>
+                   </div>
+
+                   <div ref={chartRefs.correlations} className="lg:col-span-2">
+                    <ChartCardUI title="Top Correlations" icon={LinkIcon} onDownload={() => handleDownloadChart('correlations')}>
+                        <ChartContainer config={chartConfig} className="h-full w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={result.correlationAnalysis.stats} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis type="number" domain={[-1, 1]} />
+                                    <YAxis dataKey="columnName" type="category" width={120} />
+                                    <Tooltip content={<ChartTooltipContent />} />
+                                    <Legend />
+                                    <Bar dataKey="value" name="Correlation" fill="hsl(var(--primary))" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </ChartContainer>
+                    </ChartCardUI>
+                  </div>
                 </div>
-
-                <div ref={chartRefs.columnTypes}>
-                  <ChartCardUI title="Column Types" icon={PieChartIcon} onDownload={() => handleDownloadChart('columnTypes')}>
-                    <ChartContainer config={chartConfig} className="h-full w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <RechartsPieChart>
-                          <Tooltip content={<ChartTooltipContent nameKey="name" />} />
-                          <RechartsPie data={pieChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="hsl(var(--primary))" label>
-                             {pieChartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
-                            ))}
-                          </RechartsPie>
-                        </RechartsPieChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
-                  </ChartCardUI>
-                 </div>
-
 
                 <Card>
                   <CardHeader>

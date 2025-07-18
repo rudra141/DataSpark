@@ -39,6 +39,14 @@ const AnalyzeDataOutputSchema = z.object({
     title: z.string(),
     stats: z.array(ColumnStatSchema),
   }).describe('The inferred data type for each column (e.g., Numeric, Categorical, Text).'),
+  correlationAnalysis: z.object({
+    title: z.string(),
+    stats: z.array(z.object({ columnName: z.string().describe("e.g., 'ColumnA - ColumnB'"), value: z.number().describe("The correlation coefficient") })),
+  }).describe('Top 3 most correlated pairs of numerical columns.'),
+  outlierAnalysis: z.object({
+    title: z.string(),
+    stats: z.array(ColumnStatSchema),
+  }).describe('Columns identified as potentially having outliers, with a brief reason.'),
 });
 export type AnalyzeDataOutput = z.infer<typeof AnalyzeDataOutputSchema>;
 
@@ -67,6 +75,8 @@ Based on your analysis, provide the following information in the specified JSON 
 4.  **Summary Statistics**: Provide key descriptive stats. For numerical columns, this might include mean, median, and standard deviation. For categorical columns, it could be the mode or number of unique values. Present this as a list of key-value pairs. Title should be 'Key Statistics'.
 5.  **Missing Values**: Identify the top 3 columns with the most missing or empty values and report the count for each. If there are no missing values, state that. Title should be 'Missing Values'.
 6.  **Column Types**: Infer the data type for each column (e.g., Numeric, Categorical, Boolean, Date, Text). Present this as a list of key-value pairs. Title should be 'Column Types'.
+7.  **Correlation Analysis**: Identify the top 3 most positively or negatively correlated pairs of numerical columns. Report the correlation coefficient for each pair. If not enough numerical columns exist, state that. Title should be 'Top Correlations'.
+8.  **Outlier Analysis**: Identify up to 3 columns that likely contain outliers. For each, provide a brief note (e.g., 'High standard deviation'). If no significant outliers are apparent, state that. Title should be 'Potential Outliers'.
 
 Your entire output must be a single JSON object that strictly adheres to the provided output schema.
 `,
