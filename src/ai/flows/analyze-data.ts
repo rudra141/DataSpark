@@ -18,6 +18,11 @@ const AnalyzeDataInputSchema = z.object({
 });
 export type AnalyzeDataInput = z.infer<typeof AnalyzeDataInputSchema>;
 
+// This is the internal schema used by the prompt, which includes the pre-calculated row count.
+const AnalyzeDataPromptInputSchema = AnalyzeDataInputSchema.extend({
+    rowCount: z.number().describe('The pre-calculated number of rows in the CSV data.'),
+});
+
 const ColumnStatSchema = z.object({
   columnName: z.string(),
   value: z.union([z.string(), z.number()]),
@@ -74,13 +79,14 @@ export async function analyzeData(input: AnalyzeDataInput): Promise<AnalyzeDataO
 
 const prompt = ai.definePrompt({
   name: 'analyzeDataPrompt',
-  input: {schema: AnalyzeDataInputSchema},
+  input: {schema: AnalyzeDataPromptInputSchema},
   output: {schema: AnalyzeDataOutputSchema},
   prompt: `You are an expert data analyst. A user has uploaded a dataset named '{{{fileName}}}' for analysis.
+The dataset has already been determined to have {{{rowCount}}} rows.
 
-First, perform a thorough Exploratory Data Analysis (EDA) on the provided CSV data.
-Based on your analysis, you must generate a JSON output containing:
-1.  **Basic Info**: fileName, rowCount, columnCount, columnNames.
+You must use this provided row count in your analysis.
+Based on your analysis of the CSV data, generate a JSON output containing:
+1.  **Basic Info**: fileName, rowCount (use the provided value), columnCount, columnNames.
 2.  **Key Statistics**: A summary of important stats for numerical and categorical columns. Title should be 'Key Statistics'.
 3.  **Missing Values**: Top columns with missing data and their counts. Title should be 'Missing Values'.
 4.  **Column Types**: Inferred data types for each column. Title should be 'Column Types'.
@@ -124,6 +130,10 @@ const analyzeDataFlow = ai.defineFlow(
     outputSchema: AnalyzeDataOutputSchema,
   },
   async input => {
+    // Pre-calculate row count to ensure accuracy and prevent model from failing to provide it.
+    // We trim the data and filter out empty lines. The -1 accounts for the header row.
+    const rowCount = input.csvData.trim().split('\n').filter(line => line.trim() !== '').length - 1;
+
     // For very large files, we might only send a sample to the model.
     // Here, we'll truncate the input to keep the prompt reasonably sized.
     const MAX_PROMPT_LENGTH = 20000;
@@ -131,7 +141,7 @@ const analyzeDataFlow = ai.defineFlow(
       ? input.csvData.substring(0, MAX_PROMPT_LENGTH) + "\n... (data truncated)"
       : input.csvData;
 
-    const {output} = await prompt({ ...input, csvData: truncatedCsvData });
+    const {output} = await prompt({ ...input, csvData: truncatedCsvData, rowCount });
     return output!;
   }
 );
