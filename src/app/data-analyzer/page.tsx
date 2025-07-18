@@ -4,7 +4,7 @@
 import { useState, useMemo, ChangeEvent, useRef, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download, PieChart as PieChartIcon, BarChart2, Link as LinkIcon, ScatterChart, LineChart as LineChartIcon } from 'lucide-react';
+import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download, PieChart as PieChartIcon, ScatterChart, LineChart as LineChartIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, Scatter, LineChart, Line } from 'recharts';
 import { toPng } from 'html-to-image';
 
@@ -16,7 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 
 type AnalysisResult = AnalyzeDataOutput;
 type RecommendedVisualization = AnalysisResult['recommendedVisualizations'][0];
@@ -57,7 +57,7 @@ const ResultSkeleton = () => (
   </div>
 );
 
-const InsightCard = ({ title, stats, emptyText = "No data available." }: { title: string; stats: { columnName: string; value: string | number }[], emptyText?: string }) => (
+const InsightCard = ({ title, stats, emptyText = "No data available." }: { title: string; stats?: { columnName: string; value: string | number }[], emptyText?: string }) => (
   <Card>
     <CardHeader>
       <CardTitle className="text-lg">{title}</CardTitle>
@@ -80,7 +80,6 @@ const InsightCard = ({ title, stats, emptyText = "No data available." }: { title
 );
 
 const ChartCardUI = ({ title, caption, onDownload, children }: { title: string; caption: string; children: React.ReactNode, onDownload: () => void }) => (
-  <Card>
     <CardHeader className="flex flex-row items-start justify-between">
       <div className="flex-1">
         <CardTitle className="text-lg">{title}</CardTitle>
@@ -91,12 +90,6 @@ const ChartCardUI = ({ title, caption, onDownload, children }: { title: string; 
         <span className="sr-only">Download Chart</span>
       </Button>
     </CardHeader>
-    <CardContent>
-      <div className="h-80 w-full">
-        {children}
-      </div>
-    </CardContent>
-  </Card>
 );
 
 
@@ -105,10 +98,9 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
 
   const handleDownload = useCallback(() => {
     if (chartRef.current === null) return;
-    toPng(chartRef.current, { cacheBust: true, pixelRatio: 2 }) // Increase pixelRatio for better quality
+    toPng(chartRef.current, { cacheBust: true, pixelRatio: 2, backgroundColor: 'hsl(var(--card))' })
       .then((dataUrl) => {
         const link = document.createElement('a');
-        // Sanitize title for filename
         const safeTitle = visualization.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
         link.download = `${safeTitle}.png`;
         link.href = dataUrl;
@@ -116,7 +108,6 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
       })
       .catch((err) => {
         console.error('Failed to download chart', err);
-        // Optionally, show a toast notification to the user
       });
   }, [visualization.title]);
 
@@ -131,7 +122,7 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={indexKey} angle={-30} textAnchor="end" height={60} interval={0} tick={{ fontSize: 12 }} label={{ value: xAxisLabel, position: 'insideBottom', offset: -5 }} />
+              <XAxis dataKey={indexKey} angle={-30} textAnchor="end" height={60} interval={0} tick={{ fontSize: 12 }} label={{ value: xAxisLabel, position: 'insideBottom', offset: -15 }} />
               <YAxis tick={{ fontSize: 12 }} label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }}/>
               <Tooltip content={<ChartTooltipContent />} />
               <Bar dataKey={dataKey} fill="hsl(var(--primary))" />
@@ -169,7 +160,7 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={indexKey} angle={-30} textAnchor="end" height={60} interval="preserveStartEnd" tick={{ fontSize: 12 }} label={{ value: xAxisLabel, position: 'insideBottom', offset: -5 }} />
+              <XAxis dataKey={indexKey} angle={-30} textAnchor="end" height={60} interval="preserveStartEnd" tick={{ fontSize: 12 }} label={{ value: xAxisLabel, position: 'insideBottom', offset: -15 }} />
               <YAxis tick={{ fontSize: 12 }} label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }}/>
               <Tooltip content={<ChartTooltipContent />} />
               <Line type="monotone" dataKey={dataKey} stroke="hsl(var(--primary))" activeDot={{ r: 8 }} />
@@ -182,14 +173,16 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
   };
 
   return (
-    // This div is now the target for image capture. It provides a solid background.
-    <div ref={chartRef} className="bg-card rounded-lg border p-0">
+    <Card ref={chartRef} className="bg-card">
       <ChartCardUI title={visualization.title} caption={visualization.caption} onDownload={handleDownload}>
-         <ChartContainer config={{}} className="h-full w-full">
+         <div />
+      </ChartCardUI>
+      <CardContent>
+          <ChartContainer config={{}} className="h-80 w-full">
             {renderChart()}
           </ChartContainer>
-      </ChartCardUI>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -341,7 +334,7 @@ export default function DataAnalyzerPage() {
                 </Card>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <InsightCard title={result.summaryStats.title} stats={result.summaryStats.stats} />
+                  <InsightCard title="Key Statistics" stats={result.summaryStats?.stats} emptyText="No summary statistics generated."/>
                   <InsightCard title={result.missingValues.title} stats={result.missingValues.stats} emptyText="No missing values found." />
                   <InsightCard title={result.columnTypes.title} stats={result.columnTypes.stats} />
                 </div>

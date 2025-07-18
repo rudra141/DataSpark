@@ -54,7 +54,7 @@ const AnalyzeDataOutputSchema = z.object({
   summaryStats: z.object({
     title: z.string(),
     stats: z.array(ColumnStatSchema),
-  }).describe('General descriptive statistics for the dataset.'),
+  }).describe('General descriptive statistics for the dataset.').optional(),
   missingValues: z.object({
     title: z.string(),
     stats: z.array(ColumnStatSchema),
