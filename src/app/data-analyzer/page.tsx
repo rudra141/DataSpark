@@ -86,8 +86,8 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
     if (chartRef.current === null) return;
     toPng(chartRef.current, { cacheBust: true, pixelRatio: 2, backgroundColor: 'hsl(var(--card))' })
       .then((dataUrl) => {
+        const safeTitle = (visualization.title || 'chart').replace(/[^a-z0-9]/gi, '_').toLowerCase();
         const link = document.createElement('a');
-        const safeTitle = (visualization?.title || 'chart').replace(/[^a-z0-9]/gi, '_').toLowerCase();
         link.download = `${safeTitle}.png`;
         link.href = dataUrl;
         link.click();
@@ -114,7 +114,7 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
     switch (chartType) {
       case 'bar':
         return (
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={300}>
             <BarChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey={indexKey} angle={-30} textAnchor="end" height={60} interval={0} tick={{ fontSize: 12 }} label={{ value: xAxisLabel, position: 'insideBottom', offset: -15 }} />
@@ -130,7 +130,7 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
         );
       case 'pie':
         return (
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={300}>
             <RechartsPieChart>
               <Tooltip cursor={{fill: 'hsl(var(--muted))'}} contentStyle={{backgroundColor: 'hsl(var(--background))'}}/>
               <RechartsPie data={data} dataKey={dataKey} nameKey={indexKey} cx="50%" cy="50%" outerRadius={80} label>
@@ -143,7 +143,7 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
         );
       case 'scatter':
         return (
-           <ResponsiveContainer width="100%" height="100%">
+           <ResponsiveContainer width="100%" height={300}>
             <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
               <CartesianGrid />
               <XAxis type="number" dataKey="x" name={xAxisLabel || 'x'} tick={{ fontSize: 12 }} label={{ value: xAxisLabel, position: 'insideBottom', offset: -10 }} />
@@ -155,7 +155,7 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
         )
       case 'line':
         return (
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={300}>
             <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey={indexKey} angle={-30} textAnchor="end" height={60} interval="preserveStartEnd" tick={{ fontSize: 12 }} label={{ value: xAxisLabel, position: 'insideBottom', offset: -15 }} />
@@ -183,9 +183,9 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
         </Button>
       </CardHeader>
       <CardContent>
-          <ChartContainer config={{}} className="h-80 w-full">
+          <div className="h-80 w-full">
             {renderChart()}
-          </ChartContainer>
+          </div>
       </CardContent>
     </Card>
   );
