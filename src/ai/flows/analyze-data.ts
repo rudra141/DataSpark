@@ -18,7 +18,6 @@ const AnalyzeDataInputSchema = z.object({
 });
 export type AnalyzeDataInput = z.infer<typeof AnalyzeDataInputSchema>;
 
-// This is the internal schema used by the prompt, which includes the pre-calculated row count.
 const AnalyzeDataPromptInputSchema = AnalyzeDataInputSchema.extend({
     rowCount: z.number().describe('The pre-calculated number of rows in the CSV data.'),
 });
@@ -63,11 +62,11 @@ const AnalyzeDataOutputSchema = z.object({
   missingValues: z.object({
     title: z.string(),
     stats: z.array(ColumnStatSchema),
-  }).describe('Columns with the most missing values and their counts.'),
+  }).describe('Columns with the most missing values and their counts.').optional(),
   columnTypes: z.object({
     title: z.string(),
     stats: z.array(ColumnStatSchema),
-  }).describe('The inferred data type for each column (e.g., Numeric, Categorical, Text).'),
+  }).describe('The inferred data type for each column (e.g., Numeric, Categorical, Text).').optional(),
   recommendedVisualizations: z.array(RecommendedVisualizationSchema).describe('An array of AI-recommended visualizations based on the data analysis.'),
 });
 export type AnalyzeDataOutput = z.infer<typeof AnalyzeDataOutputSchema>;
@@ -80,7 +79,7 @@ export async function analyzeData(input: AnalyzeDataInput): Promise<AnalyzeDataO
 const prompt = ai.definePrompt({
   name: 'analyzeDataPrompt',
   input: {schema: AnalyzeDataPromptInputSchema},
-  output: {schema: AnalyzeDataOutputSchema.omit({ rowCount: true })}, // The model doesn't need to return rowCount anymore.
+  output: {schema: AnalyzeDataOutputSchema.omit({ rowCount: true })},
   prompt: `You are an expert data analyst. A user has uploaded a dataset named '{{{fileName}}}' for analysis.
 The dataset has already been determined to have {{{rowCount}}} rows.
 
@@ -129,13 +128,11 @@ const analyzeDataFlow = ai.defineFlow(
     outputSchema: AnalyzeDataOutputSchema,
   },
   async input => {
-    // Pre-calculate row count to ensure accuracy and prevent model from failing to provide it.
-    // We trim the data and filter out empty lines. The -1 accounts for the header row.
+    // Pre-calculate row count to ensure accuracy.
     const rowCount = input.csvData.trim().split('\n').filter(line => line.trim() !== '').length - 1;
 
-    // For very large files, we might only send a sample to the model.
-    // Here, we'll truncate the input to keep the prompt reasonably sized.
-    const MAX_PROMPT_LENGTH = 20000;
+    // Truncate large files to keep the prompt size reasonable.
+    const MAX_PROMPT_LENGTH = 25000;
     const truncatedCsvData = input.csvData.length > MAX_PROMPT_LENGTH
       ? input.csvData.substring(0, MAX_PROMPT_LENGTH) + "\n... (data truncated)"
       : input.csvData;
@@ -146,25 +143,39 @@ const analyzeDataFlow = ai.defineFlow(
       throw new Error("The AI model did not return a valid analysis.");
     }
     
-    // DEFINITIVE FIX: Filter out any visualizations that are missing required fields to prevent crashes.
-    // This is a robust way to handle model inconsistencies.
-    const validVisualizations = (modelOutput.recommendedVisualizations || []).filter(vis => 
-        vis && vis.title && vis.caption && vis.chartType && vis.data && vis.config
-    );
+    // DEFINITIVE FIX: Manually build the final output and rigorously validate/filter each visualization.
+    
+    const validVisualizations: z.infer<typeof RecommendedVisualizationSchema>[] = [];
+    if (Array.isArray(modelOutput.recommendedVisualizations)) {
+      for (const vis of modelOutput.recommendedVisualizations) {
+        try {
+          // Use Zod to strictly parse each visualization. If it fails, it's caught and skipped.
+          const validatedVis = RecommendedVisualizationSchema.parse(vis);
+          validVisualizations.push(validatedVis);
+        } catch (error) {
+          // Log the error for debugging but don't crash the application.
+          console.warn("Skipping malformed visualization object from AI:", error);
+        }
+      }
+    }
 
-    // DEFINITIVE FIX 2: Manually construct the final object to guarantee schema compliance.
-    // Do not spread `modelOutput` as it may contain unexpected fields or be missing required ones.
     const finalOutput: AnalyzeDataOutput = {
         fileName: modelOutput.fileName || input.fileName,
         rowCount: rowCount, // Guaranteed to be correct.
         columnCount: modelOutput.columnCount || 0,
         columnNames: modelOutput.columnNames || [],
-        summaryStats: modelOutput.summaryStats, // This is optional, so it's safe.
+        summaryStats: modelOutput.summaryStats,
         missingValues: modelOutput.missingValues,
         columnTypes: modelOutput.columnTypes,
-        recommendedVisualizations: validVisualizations, // Guaranteed to be valid.
+        recommendedVisualizations: validVisualizations, // Guaranteed to be an array of valid visualizations.
     };
     
-    return finalOutput;
+    // Final validation of the entire object before returning.
+    try {
+      return AnalyzeDataOutputSchema.parse(finalOutput);
+    } catch (error) {
+        console.error("Final output validation failed:", error);
+        throw new Error("Failed to construct a valid analysis object from the AI's response.");
+    }
   }
 );
