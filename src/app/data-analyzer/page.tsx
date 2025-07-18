@@ -4,7 +4,7 @@
 import { useState, useMemo, ChangeEvent, useRef, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download, PieChart as PieChartIcon, BarChart2, Link as LinkIcon, ScatterChart } from 'lucide-react';
+import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download, PieChart as PieChartIcon, BarChart2, Link as LinkIcon, ScatterChart, LineChart as LineChartIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, Scatter, LineChart, Line } from 'recharts';
 import { toPng } from 'html-to-image';
 
@@ -100,20 +100,23 @@ const ChartCardUI = ({ title, caption, onDownload, children }: { title: string; 
 );
 
 
-const DynamicChartRenderer = ({ visualization, onDownload }: { visualization: RecommendedVisualization; onDownload: () => void }) => {
+const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVisualization }) => {
   const chartRef = useRef<HTMLDivElement>(null);
-  
+
   const handleDownload = useCallback(() => {
     if (chartRef.current === null) return;
-    toPng(chartRef.current, { cacheBust: true })
+    toPng(chartRef.current, { cacheBust: true, pixelRatio: 2 }) // Increase pixelRatio for better quality
       .then((dataUrl) => {
         const link = document.createElement('a');
-        link.download = `${visualization.title.replace(/\s+/g, '_')}.png`;
+        // Sanitize title for filename
+        const safeTitle = visualization.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        link.download = `${safeTitle}.png`;
         link.href = dataUrl;
         link.click();
       })
       .catch((err) => {
         console.error('Failed to download chart', err);
+        // Optionally, show a toast notification to the user
       });
   }, [visualization.title]);
 
@@ -128,8 +131,8 @@ const DynamicChartRenderer = ({ visualization, onDownload }: { visualization: Re
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={indexKey} label={{ value: xAxisLabel, position: 'insideBottom', offset: -10 }} />
-              <YAxis label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }}/>
+              <XAxis dataKey={indexKey} angle={-30} textAnchor="end" height={60} interval={0} tick={{ fontSize: 12 }} label={{ value: xAxisLabel, position: 'insideBottom', offset: -5 }} />
+              <YAxis tick={{ fontSize: 12 }} label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }}/>
               <Tooltip content={<ChartTooltipContent />} />
               <Bar dataKey={dataKey} fill="hsl(var(--primary))" />
             </BarChart>
@@ -154,8 +157,8 @@ const DynamicChartRenderer = ({ visualization, onDownload }: { visualization: Re
            <ResponsiveContainer width="100%" height="100%">
             <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
               <CartesianGrid />
-              <XAxis type="number" dataKey="x" name={xAxisLabel || 'x'} label={{ value: xAxisLabel, position: 'insideBottom', offset: -10 }} />
-              <YAxis type="number" dataKey="y" name={yAxisLabel || 'y'} label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }} />
+              <XAxis type="number" dataKey="x" name={xAxisLabel || 'x'} tick={{ fontSize: 12 }} label={{ value: xAxisLabel, position: 'insideBottom', offset: -10 }} />
+              <YAxis type="number" dataKey="y" name={yAxisLabel || 'y'} tick={{ fontSize: 12 }} label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }} />
               <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<ChartTooltipContent />} />
               <Scatter name="Data" data={data} fill="hsl(var(--primary))" />
             </ScatterChart>
@@ -164,22 +167,23 @@ const DynamicChartRenderer = ({ visualization, onDownload }: { visualization: Re
       case 'line':
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={indexKey} label={{ value: xAxisLabel, position: 'insideBottom', offset: -10 }} />
-              <YAxis label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }}/>
+              <XAxis dataKey={indexKey} angle={-30} textAnchor="end" height={60} interval="preserveStartEnd" tick={{ fontSize: 12 }} label={{ value: xAxisLabel, position: 'insideBottom', offset: -5 }} />
+              <YAxis tick={{ fontSize: 12 }} label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }}/>
               <Tooltip content={<ChartTooltipContent />} />
               <Line type="monotone" dataKey={dataKey} stroke="hsl(var(--primary))" activeDot={{ r: 8 }} />
             </LineChart>
           </ResponsiveContainer>
         );
       default:
-        return <p>Unsupported chart type: {chartType}</p>;
+        return <div className="flex items-center justify-center h-full text-muted-foreground">Unsupported chart type: {chartType}</div>;
     }
   };
 
   return (
-    <div ref={chartRef}>
+    // The ref is now on a new outer div that wraps the card, ensuring the entire visual element is captured.
+    <div ref={chartRef} className="bg-card rounded-lg border">
       <ChartCardUI title={visualization.title} caption={visualization.caption} onDownload={handleDownload}>
          <ChartContainer config={{}} className="h-full w-full">
             {renderChart()}
@@ -345,7 +349,7 @@ export default function DataAnalyzerPage() {
                 {result.recommendedVisualizations.length > 0 && (
                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       {result.recommendedVisualizations.map((vis, index) => (
-                        <DynamicChartRenderer key={index} visualization={vis} onDownload={() => {}} />
+                        <DynamicChartRenderer key={index} visualization={vis} />
                       ))}
                   </div>
                 )}
