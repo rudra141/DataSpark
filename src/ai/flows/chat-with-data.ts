@@ -46,8 +46,8 @@ If the question cannot be answered from the data, say so. Keep your answers conc
 Here is the conversation history for context (if any):
 {{#if history}}
 {{#each history}}
-{{#if (eq this.role "user")}}User: {{{this.content}}}{{/if}}
-{{#if (eq this.role "model")}}Assistant: {{{this.content}}}{{/if}}
+{{#if (this.role 'user')}}User: {{{this.content}}}{{/if}}
+{{#if (this.role 'model')}}Assistant: {{{this.content}}}{{/if}}
 {{/each}}
 {{/if}}
 
@@ -70,7 +70,15 @@ const chatWithDataFlow = ai.defineFlow(
     outputSchema: ChatWithDataOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    // To make Handlebars work, we need to transform the history roles
+    // into something the template can use with a simple #if block.
+    const historyForPrompt = input.history?.map(message => ({
+        ...message,
+        isUser: message.role === 'user',
+        isModel: message.role === 'model',
+    }));
+  
+    const {output} = await prompt({...input, history: historyForPrompt as any});
     return output!;
   }
 );

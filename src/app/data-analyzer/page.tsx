@@ -81,56 +81,56 @@ const InsightCard = ({ title, stats, emptyText = "No data available." }: { title
 
 // Individual Chart Renderers
 const BarChartRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
-  <ResponsiveContainer width="100%" height={300}>
-    <BarChart data={vis.data} margin={{ top: 5, right: 20, left: 10, bottom: 20 }}>
-      <CartesianGrid strokeDasharray="3 3" />
-      <XAxis dataKey={vis.config.indexKey} angle={-30} textAnchor="end" height={60} interval={0} tick={{ fontSize: 12 }} label={{ value: vis.config.xAxisLabel, position: 'insideBottom', offset: -15 }} />
-      <YAxis tick={{ fontSize: 12 }} label={{ value: vis.config.yAxisLabel, angle: -90, position: 'insideLeft' }} />
-      <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
-      <Bar dataKey={vis.config.dataKey}>
-        {vis.data.map((entry, index) => (
-          <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
-        ))}
-      </Bar>
-    </BarChart>
-  </ResponsiveContainer>
+    <ResponsiveContainer width="100%" height={300}>
+        <BarChart data={vis.data} margin={{ top: 5, right: 20, left: 10, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey={vis.config.indexKey} angle={-30} textAnchor="end" height={60} interval={0} tick={{ fontSize: 12 }} label={{ value: vis.config.xAxisLabel, position: 'insideBottom', offset: -15 }} />
+            <YAxis tick={{ fontSize: 12 }} label={{ value: vis.config.yAxisLabel, angle: -90, position: 'insideLeft' }} />
+            <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+            <Bar dataKey={vis.config.dataKey}>
+                {vis.data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
+                ))}
+            </Bar>
+        </BarChart>
+    </ResponsiveContainer>
 );
 
 const PieChartRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
-  <ResponsiveContainer width="100%" height={300}>
-    <RechartsPieChart>
-      <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
-      <RechartsPie data={vis.data} dataKey={vis.config.dataKey} nameKey={vis.config.indexKey} cx="50%" cy="50%" outerRadius={80} label>
-        {vis.data.map((entry, index) => (
-          <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
-        ))}
-      </RechartsPie>
-    </RechartsPieChart>
-  </ResponsiveContainer>
+    <ResponsiveContainer width="100%" height={300}>
+        <RechartsPieChart>
+            <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+            <RechartsPie data={vis.data} dataKey={vis.config.dataKey} nameKey={vis.config.indexKey} cx="50%" cy="50%" outerRadius={80} label>
+                {vis.data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
+                ))}
+            </RechartsPie>
+        </RechartsPieChart>
+    </ResponsiveContainer>
 );
 
 const ScatterChartRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
-  <ResponsiveContainer width="100%" height={300}>
-    <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-      <CartesianGrid />
-      <XAxis type="number" dataKey="x" name={vis.config.xAxisLabel || 'x'} tick={{ fontSize: 12 }} label={{ value: vis.config.xAxisLabel, position: 'insideBottom', offset: -10 }} />
-      <YAxis type="number" dataKey="y" name={vis.config.yAxisLabel || 'y'} tick={{ fontSize: 12 }} label={{ value: vis.config.yAxisLabel, angle: -90, position: 'insideLeft' }} />
-      <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
-      <Scatter name="Data" data={vis.data} fill="hsl(var(--primary))" />
-    </ScatterChart>
-  </ResponsiveContainer>
+    <ResponsiveContainer width="100%" height={300}>
+        <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+            <CartesianGrid />
+            <XAxis type="number" dataKey="x" name={vis.config.xAxisLabel || 'x'} tick={{ fontSize: 12 }} label={{ value: vis.config.xAxisLabel, position: 'insideBottom', offset: -10 }} />
+            <YAxis type="number" dataKey="y" name={vis.config.yAxisLabel || 'y'} tick={{ fontSize: 12 }} label={{ value: vis.config.yAxisLabel, angle: -90, position: 'insideLeft' }} />
+            <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+            <Scatter name="Data" data={vis.data} fill="hsl(var(--primary))" />
+        </ScatterChart>
+    </ResponsiveContainer>
 );
 
 const LineChartRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
-  <ResponsiveContainer width="100%" height={300}>
-    <LineChart data={vis.data} margin={{ top: 5, right: 30, left: 20, bottom: 20 }}>
-      <CartesianGrid strokeDasharray="3 3" />
-      <XAxis dataKey={vis.config.indexKey} angle={-30} textAnchor="end" height={60} interval="preserveStartEnd" tick={{ fontSize: 12 }} label={{ value: vis.config.xAxisLabel, position: 'insideBottom', offset: -15 }} />
-      <YAxis tick={{ fontSize: 12 }} label={{ value: vis.config.yAxisLabel, angle: -90, position: 'insideLeft' }} />
-      <Tooltip cursor={{ stroke: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
-      <Line type="monotone" dataKey={vis.config.dataKey} stroke="hsl(var(--primary))" activeDot={{ r: 8 }} />
-    </LineChart>
-  </ResponsiveContainer>
+    <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={vis.data} margin={{ top: 5, right: 30, left: 20, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey={vis.config.indexKey} angle={-30} textAnchor="end" height={60} interval="preserveStartEnd" tick={{ fontSize: 12 }} label={{ value: vis.config.xAxisLabel, position: 'insideBottom', offset: -15 }} />
+            <YAxis tick={{ fontSize: 12 }} label={{ value: vis.config.yAxisLabel, angle: -90, position: 'insideLeft' }} />
+            <Tooltip cursor={{ stroke: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+            <Line type="monotone" dataKey={vis.config.dataKey} stroke="hsl(var(--primary))" activeDot={{ r: 8 }} />
+        </LineChart>
+    </ResponsiveContainer>
 );
 
 
