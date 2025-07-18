@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -75,13 +76,13 @@ Based on your analysis, you must generate a JSON output containing:
 3.  **Missing Values**: Top columns with missing data and their counts. Title should be 'Missing Values'.
 4.  **Column Types**: Inferred data types for each column. Title should be 'Column Types'.
 5.  **Recommended Visualizations**: This is the most important part. Analyze the data to find the most insightful stories and generate up to 4 of the most relevant visualizations to tell these stories. For each visualization:
-    -   Choose the best `chartType`: 'bar', 'pie', 'scatter', or 'line'.
-    -   Provide a clear `title` and a concise `caption` explaining the insight.
-    -   Generate the `data` array needed to render the chart with Recharts.
+    -   Choose the best \`chartType\`: 'bar', 'pie', 'scatter', or 'line'.
+    -   Provide a clear \`title\` and a concise \`caption\` explaining the insight.
+    -   Generate the \`data\` array needed to render the chart with Recharts.
         -   For bar/pie charts, use objects with 'name' and 'value' keys.
         -   For scatter plots, use 'x', 'y', and 'z' (for bubble size) keys.
         -   For line charts, use a date/time key for the x-axis and a numeric key for the y-axis.
-    -   Provide a `config` object with `dataKey` (the main value, e.g., 'value'), `indexKey` (the label, e.g., 'name'), and optional axis labels.
+    -   Provide a \`config\` object with \`dataKey\` (the main value, e.g., 'value'), \`indexKey\` (the label, e.g., 'name'), and optional axis labels.
 
 **Example for a recommended bar chart:**
 \`\`\`json
