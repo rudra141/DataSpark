@@ -5,7 +5,7 @@ import { useState, useMemo, ChangeEvent, useRef, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, BarChart, FileUp, Loader2, Sparkles, Table, Download, PieChart, BarChart2 } from 'lucide-react';
-import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Pie } from 'recharts';
+import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Pie as RechartsPie } from 'recharts';
 import { toPng } from 'html-to-image';
 
 
@@ -293,10 +293,10 @@ export default function DataAnalyzerPage() {
                 <div ref={chartRefs.columnTypes}>
                   <ChartCard title="Column Types" icon={PieChart} onDownload={() => handleDownloadChart('columnTypes')}>
                       <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
+                        <RechartsPie>
                           <Tooltip content={<ChartTooltipContent />} />
-                          <Pie data={pieChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="hsl(var(--primary))" label />
-                        </PieChart>
+                          <RechartsPie data={pieChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="hsl(var(--primary))" label />
+                        </RechartsPie>
                       </ResponsiveContainer>
                   </ChartCard>
                  </div>
