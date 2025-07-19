@@ -12,6 +12,7 @@ const isProtectedRoute = createRouteMatcher([
   '/formula(.*)',
   '/data-analyzer(.*)',
   '/chat-with-data(.*)',
+  '/diy-data(.*)',
 ]);
 
 export default clerkMiddleware((auth, req) => {

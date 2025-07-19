@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart, Bot, Calculator, Sparkles } from 'lucide-react';
+import { BarChart, Bot, Calculator, Sparkles, Wand2 } from 'lucide-react';
 
 import {
   Sidebar,
@@ -33,6 +33,11 @@ export function AppSidebar({ children }: { children?: React.ReactNode }) {
         href: '/chat-with-data',
         label: 'Chat with Data',
         icon: Bot,
+    },
+    {
+        href: '/diy-data',
+        label: 'DIY Data',
+        icon: Wand2,
     }
   ];
 
