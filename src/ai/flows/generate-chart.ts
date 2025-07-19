@@ -61,7 +61,7 @@ Your task is to analyze the user's request and the provided CSV data, and then g
 **Instructions**:
 1.  Read the user's request carefully to understand the desired chart type (bar, pie, scatter, line), the data columns to use, and any other specifications.
 2.  Analyze the provided CSV data to extract and structure the data needed for the chart.
-3.  Generate a single JSON object that strictly adheres to the output schema.
+3.  Generate a single JSON object that strictly adheres to the output schema. This object **MUST** have a 'title', 'caption', 'chartType', 'data', and 'config'.
 4.  If the request is ambiguous or cannot be fulfilled with the given data, you should still attempt to create the most reasonable chart possible that matches the user's intent. Do not ask for clarification.
 5.  Ensure the 'data' array in your JSON output is correctly formatted for the specified 'chartType'.
     -   For bar, pie, and line charts, use 'name' and 'value' keys.
@@ -96,12 +96,16 @@ const generateChartFlow = ai.defineFlow(
       return null;
     }
     
-    // Use safeParse to validate the output. This is the most robust way to handle
+    // DEFINITIVE FIX: Use safeParse to validate the output. This is the most robust way to handle
     // potential malformations from the AI. If it's invalid, return null instead of crashing.
     const validationResult = RecommendedVisualizationSchema.safeParse(output);
+    
     if (validationResult.success) {
+      // The object is 100% valid, return it.
       return validationResult.data;
     } else {
+      // The AI returned a malformed object. Log the error for debugging and return null.
+      // This prevents the application from crashing.
       console.error("AI returned a malformed visualization object:", validationResult.error.errors);
       return null;
     }
