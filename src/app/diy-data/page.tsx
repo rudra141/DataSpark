@@ -1,13 +1,11 @@
 
 'use client';
 
-import { useState, useRef, useCallback, ChangeEvent } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useState, useRef, useCallback, useContext } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Wand2, Download, Bot } from 'lucide-react';
+import { AlertTriangle, Bot, Download, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line, AreaChart, Area, Treemap } from 'recharts';
 import { toPng } from 'html-to-image';
-import * as XLSX from 'xlsx';
 
 import { generateChart, type GenerateChartOutput } from '@/ai/flows/generate-chart';
 import { enhanceChartRequest } from '@/ai/flows/enhance-chart-request';
@@ -18,10 +16,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Textarea } from '@/components/ui/textarea';
+import { DataContext } from '@/context/data-context';
+import { FileUpload } from '@/components/file-upload';
+import Link from 'next/link';
 
 type VisualizationResult = NonNullable<GenerateChartOutput>;
 
-// Chart Rendering Components (reused from data-analyzer page for consistency)
 const PIE_CHART_COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#AF19FF", "#FF4560", "#775DD0"];
 
 const BarChartRenderer = ({ vis }: { vis: VisualizationResult }) => (
@@ -317,69 +317,15 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
 };
 
 
-export default function DIYDataPage() {
-  const [file, setFile] = useState<File | null>(null);
-  const [csvData, setCsvData] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const { isLoaded: isUserLoaded } = useUser();
-
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      if (selectedFile.size > 1 * 1024 * 1024) { // 1MB limit
-        setError("File is too large. Please upload a file smaller than 1MB.");
-        setFile(null);
-        return;
-      }
-      const fileType = selectedFile.name.split('.').pop()?.toLowerCase();
-      if (fileType !== 'csv' && fileType !== 'xlsx') {
-        setError("Invalid file type. Please upload a .csv or .xlsx file.");
-        setFile(null);
-        return;
-      }
-      setError(null);
-      setFile(selectedFile);
-      setCsvData(null);
-    }
-  };
+const DIYDataPageContent = () => {
+    const { csvData, fileName, setCsvData, setFileName } = useContext(DataContext);
   
-  const handleLoadFile = async () => {
-      if (!file) {
-          setError("Please select a file first.");
-          return;
-      }
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        const fileType = file.name.split('.').pop()?.toLowerCase();
-        let fileContent: string;
-
-        if (fileType === 'xlsx') {
-          const data = await file.arrayBuffer();
-          const workbook = XLSX.read(data);
-          const worksheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[worksheetName];
-          fileContent = XLSX.utils.sheet_to_csv(worksheet);
-        } else {
-          fileContent = await file.text();
-        }
-        setCsvData(fileContent);
-      } catch (err) {
-          setError("Could not read file. Please try again.");
-          console.error(err);
-      } finally {
-          setIsLoading(false);
-      }
-  }
-
-  const isReady = isUserLoaded;
-
-  return (
-    <SidebarProvider>
-      <AppSidebar />
+    const handleFileLoaded = (data: string, name: string) => {
+      setCsvData(data);
+      setFileName(name);
+    };
+  
+    return (
       <main className="container mx-auto p-4 sm:p-8 flex flex-col items-center">
         <div className="w-full max-w-4xl space-y-8">
           <header>
@@ -391,64 +337,38 @@ export default function DIYDataPage() {
               Upload a CSV or XLSX file and use plain English to generate the exact charts you need.
             </p>
           </header>
-
+  
           <AnimatePresence mode="wait">
-             {csvData && file ? (
+             {csvData && fileName ? (
                 <motion.div key="diy-interface" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                    <DIYInterface csvData={csvData} fileName={file.name} />
+                    <DIYInterface csvData={csvData} fileName={fileName} />
                 </motion.div>
              ) : (
-                 <motion.div key="upload-form" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                     {!isReady ? (
-                      <Card>
-                        <CardHeader><Skeleton className="h-8 w-3/4" /></CardHeader>
-                        <CardContent><Skeleton className="h-24 w-full" /></CardContent>
-                      </Card>
-                    ) : (
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Upload Your Data File</CardTitle>
-                            <CardDescription>Select a .csv or .xlsx file from your computer to begin.</CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="flex flex-col sm:flex-row items-center gap-4">
-                              <label htmlFor="file-upload" className="flex-1 w-full">
-                                <div className="flex items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                                  <div className="flex items-center gap-2 text-muted-foreground">
-                                    <FileUp className="h-6 w-6" />
-                                    <span>{file ? file.name : 'Click to select a file'}</span>
-                                  </div>
-                                </div>
-                                <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv,.xlsx" />
-                              </label>
-                              <Button onClick={handleLoadFile} disabled={!file || isLoading} className="w-full sm:w-auto">
-                                {isLoading ? (
-                                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading...</>
-                                ) : (
-                                  <><Sparkles className="mr-2 h-4 w-4" /> Start DIY Session</>
-                                )}
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                    )}
+                 <motion.div key="upload-form" className="w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                     <FileUpload onFileLoaded={handleFileLoaded}>
+                        {/* No action button needed here as loading the file is the action */}
+                    </FileUpload>
+                    <Alert variant="destructive" className="mt-4">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>No Data Loaded</AlertTitle>
+                        <AlertDescription>
+                            Please upload a file to start creating charts, or analyze a file first on the{' '}
+                            <Button variant="link" asChild className="p-0 h-auto"><Link href="/data-analyzer">Data Analyzer</Link></Button> page.
+                        </AlertDescription>
+                    </Alert>
                  </motion.div>
              )}
           </AnimatePresence>
-
-          <AnimatePresence>
-            {error && (
-              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                <Alert variant="destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </main>
-    </SidebarProvider>
-  );
+    );
+};
+  
+export default function DIYDataPage() {
+    return (
+      <SidebarProvider>
+        <AppSidebar />
+        <DIYDataPageContent />
+      </SidebarProvider>
+    );
 }

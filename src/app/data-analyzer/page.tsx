@@ -1,14 +1,12 @@
 
 'use client';
 
-import { useState, useRef, useCallback, ChangeEvent } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useState, useRef, useCallback, useContext } from 'react';
+import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download, Users, Link as LinkIcon } from 'lucide-react';
+import { AlertTriangle, BarChart as BarChartIcon, Bot, Download, FileUp, Link as LinkIcon, Loader2, Sparkles, Table, Users } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line, AreaChart, Area, Treemap } from 'recharts';
 import { toPng } from 'html-to-image';
-import * as XLSX from 'xlsx';
-
 
 import { analyzeData, type AnalyzeDataOutput } from '@/ai/flows/analyze-data';
 import { Button } from '@/components/ui/button';
@@ -18,6 +16,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Table as UiTable, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DataContext } from '@/context/data-context';
+import { FileUpload } from '@/components/file-upload';
 
 
 type AnalysisResult = AnalyzeDataOutput;
@@ -81,7 +81,6 @@ const InsightCard = ({ title, stats, emptyText = "No data available." }: { title
   </Card>
 );
 
-// Individual Chart Renderers
 const BarChartRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
     <ResponsiveContainer width="100%" height={300}>
         <BarChart data={vis.data} margin={{ top: 5, right: 20, left: 10, bottom: 20 }}>
@@ -168,9 +167,9 @@ const TreemapRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
     </ResponsiveContainer>
 );
 
-
 const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVisualization }) => {
   const chartRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   const handleDownload = useCallback(() => {
     if (chartRef.current === null) return;
@@ -187,8 +186,12 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
       });
   }, [visualization]);
 
+  const handleChat = () => {
+    const chatQuery = `Tell me more about the chart: "${visualization.title}" which shows "${visualization.caption}"`;
+    router.push(`/chat-with-data?q=${encodeURIComponent(chatQuery)}`);
+  };
+
   const renderChart = () => {
-    // Defensive check to ensure visualization and its properties are valid
     if (!visualization?.chartType || !visualization.data || !visualization.config) {
       return (
         <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -211,57 +214,41 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
   };
 
   return (
-    <Card ref={chartRef} className="bg-card">
+    <Card ref={chartRef} className="bg-card flex flex-col">
       <CardHeader className="flex flex-row items-start justify-between">
         <div className="flex-1">
           <CardTitle className="text-lg">{visualization.title}</CardTitle>
           <CardDescription className="mt-1">{visualization.caption}</CardDescription>
         </div>
-        <Button variant="ghost" size="icon" onClick={handleDownload} className="h-8 w-8 ml-4">
+        <Button variant="ghost" size="icon" onClick={handleDownload} className="h-8 w-8 ml-4 shrink-0">
           <Download className="h-4 w-4" />
           <span className="sr-only">Download Chart</span>
         </Button>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-grow">
           <div className="h-80 w-full">
             {renderChart()}
           </div>
       </CardContent>
+      <CardFooter>
+        <Button variant="outline" size="sm" onClick={handleChat}>
+          <Bot className="h-4 w-4 mr-2" />
+          Chat about this chart
+        </Button>
+      </CardFooter>
     </Card>
   );
 };
 
-export default function DataAnalyzerPage() {
-  const [file, setFile] = useState<File | null>(null);
+const DataAnalyzerPageContent = () => {
+  const { csvData, fileName, setCsvData, setFileName } = useContext(DataContext);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { isLoaded: isUserLoaded } = useUser();
-
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      if (selectedFile.size > 1 * 1024 * 1024) { // 1MB limit
-        setError("File is too large. Please upload a file smaller than 1MB.");
-        setFile(null);
-        return;
-      }
-      const fileType = selectedFile.name.split('.').pop()?.toLowerCase();
-      if (fileType !== 'csv' && fileType !== 'xlsx') {
-        setError("Invalid file type. Please upload a .csv or .xlsx file.");
-        setFile(null);
-        return;
-      }
-      setError(null);
-      setFile(selectedFile);
-      setResult(null); // Clear previous results
-    }
-  };
-
   const handleAnalyze = async () => {
-    if (!file) {
-      setError("Please select a file to analyze.");
+    if (!csvData || !fileName) {
+      setError("No data available to analyze. Please upload a file.");
       return;
     }
 
@@ -270,20 +257,7 @@ export default function DataAnalyzerPage() {
     setResult(null);
 
     try {
-      const fileType = file.name.split('.').pop()?.toLowerCase();
-      let fileContent: string;
-
-      if (fileType === 'xlsx') {
-        const data = await file.arrayBuffer();
-        const workbook = XLSX.read(data);
-        const worksheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[worksheetName];
-        fileContent = XLSX.utils.sheet_to_csv(worksheet);
-      } else {
-        fileContent = await file.text();
-      }
-
-      const output = await analyzeData({ csvData: fileContent, fileName: file.name });
+      const output = await analyzeData({ csvData, fileName });
       setResult(output);
     } catch (err: any) {
       setError("An error occurred during analysis. The file might be corrupted or in an unsupported format. Please try again.");
@@ -293,204 +267,180 @@ export default function DataAnalyzerPage() {
     }
   };
 
-  const isReady = isUserLoaded;
-
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <main className="container mx-auto p-4 sm:p-8 flex flex-col items-center">
-        <div className="w-full max-w-6xl space-y-8">
-          <header>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <BarChartIcon className="h-8 w-8 text-primary" />
-              Data Analyzer
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Upload a CSV or XLSX file to get instant insights, statistics, and AI-recommended visualizations.
-            </p>
-          </header>
+    <main className="container mx-auto p-4 sm:p-8 flex flex-col items-center">
+      <div className="w-full max-w-6xl space-y-8">
+        <header>
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <BarChartIcon className="h-8 w-8 text-primary" />
+            Data Analyzer
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Upload a CSV or XLSX file to get instant insights, statistics, and AI-recommended visualizations.
+          </p>
+        </header>
 
-          <AnimatePresence mode="wait">
-            {!isReady ? (
-              <Card>
-                <CardHeader>
-                  <Skeleton className="h-8 w-3/4" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-24 w-full" />
-                </CardContent>
-              </Card>
+        <FileUpload onFileLoaded={(data, name) => {
+          setCsvData(data);
+          setFileName(name);
+          setResult(null);
+          setError(null);
+        }}>
+            <Button onClick={handleAnalyze} disabled={!csvData || isLoading}>
+            {isLoading ? (
+                <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Analyzing...
+                </>
             ) : (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Upload Your Data File</CardTitle>
-                    <CardDescription>
-                      Select a .csv or .xlsx file from your computer. Max file size: 1MB.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-col sm:flex-row items-center gap-4">
-                      <label htmlFor="file-upload" className="flex-1 w-full">
-                        <div className="flex items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <FileUp className="h-6 w-6" />
-                            <span>{file ? file.name : 'Click to select a file'}</span>
-                          </div>
-                        </div>
-                        <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv,.xlsx" />
-                      </label>
-                      <Button onClick={handleAnalyze} disabled={!file || isLoading} className="w-full sm:w-auto">
-                        {isLoading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Analyzing...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="mr-2 h-4 w-4" /> Analyze Data
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+                <>
+                <Sparkles className="mr-2 h-4 w-4" /> Analyze Data
+                </>
             )}
-          </AnimatePresence>
+            </Button>
+        </FileUpload>
 
-          <AnimatePresence>
-            {error && (
-              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                <Alert variant="destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        <AnimatePresence>
+          {error && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-          <AnimatePresence mode="wait">
-            {isLoading && <ResultSkeleton key="skeleton" />}
+        <AnimatePresence mode="wait">
+          {isLoading && <ResultSkeleton key="skeleton" />}
 
-            {result && !isLoading && (
-              <motion.div
-                key="result"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-6"
-              >
-                <Card>
-                   <CardHeader>
-                      <CardTitle className="text-xl">Analysis for: {result.fileName}</CardTitle>
-                       <CardDescription>
-                          Found {result.rowCount} rows and {result.columnCount} columns.
-                       </CardDescription>
-                   </CardHeader>
-                </Card>
+          {result && !isLoading && (
+            <motion.div
+              key="result"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              <Card>
+                 <CardHeader>
+                    <CardTitle className="text-xl">Analysis for: {result.fileName}</CardTitle>
+                     <CardDescription>
+                        Found {result.rowCount} rows and {result.columnCount} columns.
+                     </CardDescription>
+                 </CardHeader>
+              </Card>
 
-                {result.executiveSummary && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Sparkles className="h-5 w-5 text-primary" />
-                        AI Executive Summary
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground leading-relaxed">{result.executiveSummary}</p>
-                    </CardContent>
-                  </Card>
-                )}
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {result.summaryStats && <InsightCard title="Key Statistics" stats={result.summaryStats.stats} emptyText="No summary statistics generated."/>}
-                  {result.missingValues && <InsightCard title={result.missingValues.title} stats={result.missingValues.stats} emptyText="No missing values found." />}
-                  {result.columnTypes && <InsightCard title={result.columnTypes.title} stats={result.columnTypes.stats} />}
-                </div>
-
-                {result.correlationAnalysis && (
-                  <Card>
-                    <CardHeader>
-                       <CardTitle className="text-lg flex items-center gap-2">
-                          <LinkIcon className="h-5 w-5" />
-                          {result.correlationAnalysis.title}
-                       </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {result.correlationAnalysis.correlations.map((corr, index) => (
-                        <div key={index}>
-                          <p className="text-sm font-medium">{corr.variable1} & {corr.variable2}: <span className="font-mono text-primary">{corr.correlation.toFixed(2)}</span></p>
-                          <p className="text-sm text-muted-foreground">{corr.interpretation}</p>
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                )}
-
-                {result.segmentationAnalysis && (
-                   <Card>
-                    <CardHeader>
-                       <CardTitle className="text-lg flex items-center gap-2">
-                          <Users className="h-5 w-5" />
-                          {result.segmentationAnalysis.title}
-                       </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                       <UiTable>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Segment</TableHead>
-                            <TableHead>Description</TableHead>
-                            <TableHead className="text-right">Count</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {result.segmentationAnalysis.segments.map((seg, index) => (
-                            <TableRow key={index}>
-                              <TableCell className="font-medium">{seg.name}</TableCell>
-                              <TableCell>{seg.description}</TableCell>
-                              <TableCell className="text-right font-mono">{seg.count}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </UiTable>
-                    </CardContent>
-                  </Card>
-                )}
-                
-                {result.recommendedVisualizations.length > 0 && (
-                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {result.recommendedVisualizations.map((vis, index) => (
-                        <DynamicChartRenderer key={index} visualization={vis} />
-                      ))}
-                  </div>
-                )}
-                
+              {result.executiveSummary && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <Table className="h-5 w-5" />
-                      Column Overview
+                      <Sparkles className="h-5 w-5 text-primary" />
+                      AI Executive Summary
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                      {result.columnNames.map(name => (
-                        <div key={name} className="p-2 bg-muted/50 rounded-md text-sm truncate" title={name}>
-                          {name}
-                        </div>
-                      ))}
-                    </div>
+                    <p className="text-muted-foreground leading-relaxed">{result.executiveSummary}</p>
                   </CardContent>
                 </Card>
+              )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {result.summaryStats && <InsightCard title="Key Statistics" stats={result.summaryStats.stats} emptyText="No summary statistics generated."/>}
+                {result.missingValues && <InsightCard title={result.missingValues.title} stats={result.missingValues.stats} emptyText="No missing values found." />}
+                {result.columnTypes && <InsightCard title={result.columnTypes.title} stats={result.columnTypes.stats} />}
+              </div>
 
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </main>
+              {result.correlationAnalysis && (
+                <Card>
+                  <CardHeader>
+                     <CardTitle className="text-lg flex items-center gap-2">
+                        <LinkIcon className="h-5 w-5" />
+                        {result.correlationAnalysis.title}
+                     </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {result.correlationAnalysis.correlations.map((corr, index) => (
+                      <div key={index}>
+                        <p className="text-sm font-medium">{corr.variable1} & {corr.variable2}: <span className="font-mono text-primary">{corr.correlation.toFixed(2)}</span></p>
+                        <p className="text-sm text-muted-foreground">{corr.interpretation}</p>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+
+              {result.segmentationAnalysis && (
+                 <Card>
+                  <CardHeader>
+                     <CardTitle className="text-lg flex items-center gap-2">
+                        <Users className="h-5 w-5" />
+                        {result.segmentationAnalysis.title}
+                     </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                     <UiTable>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Segment</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead className="text-right">Count</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {result.segmentationAnalysis.segments.map((seg, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{seg.name}</TableCell>
+                            <TableCell>{seg.description}</TableCell>
+                            <TableCell className="text-right font-mono">{seg.count}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </UiTable>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {result.recommendedVisualizations.length > 0 && (
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {result.recommendedVisualizations.map((vis, index) => (
+                      <DynamicChartRenderer key={index} visualization={vis} />
+                    ))}
+                </div>
+              )}
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Table className="h-5 w-5" />
+                    Column Overview
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                    {result.columnNames.map(name => (
+                      <div key={name} className="p-2 bg-muted/50 rounded-md text-sm truncate" title={name}>
+                        {name}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </main>
+  )
+}
+
+
+export default function DataAnalyzerPage() {
+  return (
+    <SidebarProvider>
+      <AppSidebar />
+      <DataAnalyzerPageContent />
     </SidebarProvider>
   );
 }
