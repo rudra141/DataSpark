@@ -96,7 +96,8 @@ const generateChartFlow = ai.defineFlow(
       return null;
     }
     
-    // Use safeParse to validate the output. If it's invalid, return null instead of crashing.
+    // Use safeParse to validate the output. This is the most robust way to handle
+    // potential malformations from the AI. If it's invalid, return null instead of crashing.
     const validationResult = RecommendedVisualizationSchema.safeParse(output);
     if (validationResult.success) {
       return validationResult.data;

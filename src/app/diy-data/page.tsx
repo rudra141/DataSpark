@@ -155,11 +155,13 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
       if (output) {
         setChart(output);
       } else {
-        setError("Sorry, I couldn't generate a chart from your request. Please try rephrasing it or check if the data supports it.");
+        // This is a specific, user-friendly message for when the AI can't fulfill the request.
+        setError("Sorry, I couldn't generate a chart from that request. Please try rephrasing it, or check if the data supports it.");
       }
     } catch (err) {
       console.error(err);
-      setError("An unexpected error occurred. Please try again.");
+      // This is for unexpected system errors.
+      setError("An unexpected error occurred while generating the chart. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -209,7 +211,7 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
+              <AlertTitle>Generation Failed</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           </motion.div>
