@@ -20,14 +20,14 @@ export function AppSidebar({ children }: { children?: React.ReactNode }) {
 
   const menuItems = [
     {
-      href: '/formula',
-      label: 'Formula Generator',
-      icon: Calculator,
-    },
-    {
       href: '/data-analyzer',
       label: 'Data Analyzer',
       icon: BarChart,
+    },
+    {
+      href: '/formula',
+      label: 'Formula Generator',
+      icon: Calculator,
     },
     {
         href: '/chat-with-data',
