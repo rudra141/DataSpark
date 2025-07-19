@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line, AreaChart, Area, Treemap } from 'recharts';
 import { toPng } from 'html-to-image';
+import * as XLSX from 'xlsx';
 
 
 import { analyzeData, type AnalyzeDataOutput } from '@/ai/flows/analyze-data';
@@ -245,8 +246,9 @@ export default function DataAnalyzerPage() {
         setFile(null);
         return;
       }
-      if (!selectedFile.name.endsWith('.csv')) {
-        setError("Invalid file type. Please upload a .csv file.");
+      const fileType = selectedFile.name.split('.').pop()?.toLowerCase();
+      if (fileType !== 'csv' && fileType !== 'xlsx') {
+        setError("Invalid file type. Please upload a .csv or .xlsx file.");
         setFile(null);
         return;
       }
@@ -267,7 +269,19 @@ export default function DataAnalyzerPage() {
     setResult(null);
 
     try {
-      const fileContent = await file.text();
+      const fileType = file.name.split('.').pop()?.toLowerCase();
+      let fileContent: string;
+
+      if (fileType === 'xlsx') {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data);
+        const worksheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[worksheetName];
+        fileContent = XLSX.utils.sheet_to_csv(worksheet);
+      } else {
+        fileContent = await file.text();
+      }
+
       const output = await analyzeData({ csvData: fileContent, fileName: file.name });
       setResult(output);
     } catch (err: any) {
@@ -291,7 +305,7 @@ export default function DataAnalyzerPage() {
               Data Analyzer
             </h1>
             <p className="text-muted-foreground mt-2">
-              Upload a CSV file to get instant insights, statistics, and AI-recommended visualizations.
+              Upload a CSV or XLSX file to get instant insights, statistics, and AI-recommended visualizations.
             </p>
           </header>
 
@@ -311,7 +325,7 @@ export default function DataAnalyzerPage() {
                   <CardHeader>
                     <CardTitle>Upload Your Data File</CardTitle>
                     <CardDescription>
-                      Select a .csv file from your computer. Max file size: 1MB.
+                      Select a .csv or .xlsx file from your computer. Max file size: 1MB.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -323,7 +337,7 @@ export default function DataAnalyzerPage() {
                             <span>{file ? file.name : 'Click to select a file'}</span>
                           </div>
                         </div>
-                        <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv" />
+                        <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv,.xlsx" />
                       </label>
                       <Button onClick={handleAnalyze} disabled={!file || isLoading} className="w-full sm:w-auto">
                         {isLoading ? (
@@ -415,5 +429,3 @@ export default function DataAnalyzerPage() {
     </SidebarProvider>
   );
 }
-
-    

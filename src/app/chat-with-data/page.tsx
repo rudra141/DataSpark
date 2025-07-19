@@ -14,6 +14,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import * as XLSX from 'xlsx';
 
 const ChatInterface = ({ csvData, fileName }: { csvData: string, fileName: string }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -136,8 +137,9 @@ export default function ChatWithDataPage() {
         setFile(null);
         return;
       }
-      if (!selectedFile.name.endsWith('.csv')) {
-        setError("Invalid file type. Please upload a .csv file.");
+      const fileType = selectedFile.name.split('.').pop()?.toLowerCase();
+      if (fileType !== 'csv' && fileType !== 'xlsx') {
+        setError("Invalid file type. Please upload a .csv or .xlsx file.");
         setFile(null);
         return;
       }
@@ -156,8 +158,19 @@ export default function ChatWithDataPage() {
       setError(null);
       
       try {
-          const fileContent = await file.text();
-          setCsvData(fileContent);
+        const fileType = file.name.split('.').pop()?.toLowerCase();
+        let fileContent: string;
+
+        if (fileType === 'xlsx') {
+          const data = await file.arrayBuffer();
+          const workbook = XLSX.read(data);
+          const worksheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[worksheetName];
+          fileContent = XLSX.utils.sheet_to_csv(worksheet);
+        } else {
+          fileContent = await file.text();
+        }
+        setCsvData(fileContent);
       } catch (err) {
           setError("Could not read file. Please try again.");
           console.error(err);
@@ -179,7 +192,7 @@ export default function ChatWithDataPage() {
               Chat with Data
             </h1>
             <p className="text-muted-foreground mt-2">
-              Upload a CSV file and ask questions to get instant insights.
+              Upload a CSV or XLSX file and ask questions to get instant insights.
             </p>
           </header>
 
@@ -204,7 +217,7 @@ export default function ChatWithDataPage() {
                           <CardHeader>
                             <CardTitle>Upload Your Data File</CardTitle>
                             <CardDescription>
-                              Select a .csv file from your computer to start chatting. Max file size: 1MB.
+                              Select a .csv or .xlsx file from your computer to start chatting. Max file size: 1MB.
                             </CardDescription>
                           </CardHeader>
                           <CardContent>
@@ -216,7 +229,7 @@ export default function ChatWithDataPage() {
                                     <span>{file ? file.name : 'Click to select a file'}</span>
                                   </div>
                                 </div>
-                                <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv" />
+                                <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv,.xlsx" />
                               </label>
                               <Button onClick={handleLoadFile} disabled={!file || isLoading} className="w-full sm:w-auto">
                                 {isLoading ? (

@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Wand2, Download, Bot } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line, AreaChart, Area, Treemap } from 'recharts';
 import { toPng } from 'html-to-image';
+import * as XLSX from 'xlsx';
 
 import { generateChart, type GenerateChartOutput } from '@/ai/flows/generate-chart';
 import { enhanceChartRequest } from '@/ai/flows/enhance-chart-request';
@@ -218,12 +219,10 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
       if (output) {
         setChart(output);
       } else {
-        // This is a specific, user-friendly message for when the AI can't fulfill the request.
         setError("Sorry, I couldn't generate a chart from that request. Please try rephrasing it, or check if the data supports it.");
       }
     } catch (err) {
       console.error(err);
-      // This is for unexpected system errors.
       setError("An unexpected error occurred while generating the chart. Please try again.");
     } finally {
       setIsLoading(false);
@@ -334,8 +333,9 @@ export default function DIYDataPage() {
         setFile(null);
         return;
       }
-      if (!selectedFile.name.endsWith('.csv')) {
-        setError("Invalid file type. Please upload a .csv file.");
+      const fileType = selectedFile.name.split('.').pop()?.toLowerCase();
+      if (fileType !== 'csv' && fileType !== 'xlsx') {
+        setError("Invalid file type. Please upload a .csv or .xlsx file.");
         setFile(null);
         return;
       }
@@ -354,8 +354,19 @@ export default function DIYDataPage() {
       setError(null);
       
       try {
-          const fileContent = await file.text();
-          setCsvData(fileContent);
+        const fileType = file.name.split('.').pop()?.toLowerCase();
+        let fileContent: string;
+
+        if (fileType === 'xlsx') {
+          const data = await file.arrayBuffer();
+          const workbook = XLSX.read(data);
+          const worksheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[worksheetName];
+          fileContent = XLSX.utils.sheet_to_csv(worksheet);
+        } else {
+          fileContent = await file.text();
+        }
+        setCsvData(fileContent);
       } catch (err) {
           setError("Could not read file. Please try again.");
           console.error(err);
@@ -377,7 +388,7 @@ export default function DIYDataPage() {
               DIY with Data
             </h1>
             <p className="text-muted-foreground mt-2">
-              Upload a CSV file and use plain English to generate the exact charts you need.
+              Upload a CSV or XLSX file and use plain English to generate the exact charts you need.
             </p>
           </header>
 
@@ -397,7 +408,7 @@ export default function DIYDataPage() {
                         <Card>
                           <CardHeader>
                             <CardTitle>Upload Your Data File</CardTitle>
-                            <CardDescription>Select a .csv file from your computer to begin.</CardDescription>
+                            <CardDescription>Select a .csv or .xlsx file from your computer to begin.</CardDescription>
                           </CardHeader>
                           <CardContent>
                             <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -408,7 +419,7 @@ export default function DIYDataPage() {
                                     <span>{file ? file.name : 'Click to select a file'}</span>
                                   </div>
                                 </div>
-                                <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv" />
+                                <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv,.xlsx" />
                               </label>
                               <Button onClick={handleLoadFile} disabled={!file || isLoading} className="w-full sm:w-auto">
                                 {isLoading ? (
@@ -441,5 +452,3 @@ export default function DIYDataPage() {
     </SidebarProvider>
   );
 }
-
-    
