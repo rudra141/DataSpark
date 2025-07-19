@@ -5,7 +5,7 @@ import { useState, useRef, useCallback, ChangeEvent } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line, AreaChart, Area, Treemap } from 'recharts';
 import { toPng } from 'html-to-image';
 
 
@@ -133,6 +133,39 @@ const LineChartRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
     </ResponsiveContainer>
 );
 
+const AreaChartRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
+    <ResponsiveContainer width="100%" height={300}>
+        <AreaChart data={vis.data} margin={{ top: 5, right: 30, left: 20, bottom: 20 }}>
+            <defs>
+                <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey={vis.config.indexKey} angle={-30} textAnchor="end" height={60} interval="preserveStartEnd" tick={{ fontSize: 12 }} label={{ value: vis.config.xAxisLabel, position: 'insideBottom', offset: -15 }} />
+            <YAxis tick={{ fontSize: 12 }} label={{ value: vis.config.yAxisLabel, angle: -90, position: 'insideLeft' }} />
+            <Tooltip cursor={{ stroke: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+            <Area type="monotone" dataKey={vis.config.dataKey} stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorUv)" />
+        </AreaChart>
+    </ResponsiveContainer>
+);
+
+const TreemapRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
+    <ResponsiveContainer width="100%" height={300}>
+        <Treemap
+            data={vis.data}
+            dataKey={vis.config.dataKey || 'size'}
+            nameKey={vis.config.indexKey || 'name'}
+            aspectRatio={4 / 3}
+            stroke="hsl(var(--card))"
+            fill="hsl(var(--muted))"
+        >
+            <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+        </Treemap>
+    </ResponsiveContainer>
+);
+
 
 const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVisualization }) => {
   const chartRef = useRef<HTMLDivElement>(null);
@@ -164,16 +197,13 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
     }
     
     switch (visualization.chartType) {
-      case 'bar':
-        return <BarChartRenderer vis={visualization} />;
-      case 'pie':
-        return <PieChartRenderer vis={visualization} />;
-      case 'scatter':
-        return <ScatterChartRenderer vis={visualization} />;
-      case 'line':
-        return <LineChartRenderer vis={visualization} />;
-      default:
-        return <div className="flex items-center justify-center h-full text-muted-foreground">Unsupported chart type: {visualization.chartType}</div>;
+      case 'bar': return <BarChartRenderer vis={visualization} />;
+      case 'pie': return <PieChartRenderer vis={visualization} />;
+      case 'scatter': return <ScatterChartRenderer vis={visualization} />;
+      case 'line': return <LineChartRenderer vis={visualization} />;
+      case 'area': return <AreaChartRenderer vis={visualization} />;
+      case 'treemap': return <TreemapRenderer vis={visualization} />;
+      default: return <div className="flex items-center justify-center h-full text-muted-foreground">Unsupported chart type: {visualization.chartType}</div>;
     }
   };
 

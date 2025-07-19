@@ -30,19 +30,21 @@ const ColumnStatSchema = z.object({
 const ChartDataItemSchema = z.object({
     name: z.string().optional().describe("The label for a data point (e.g., on the x-axis of a bar chart)."),
     value: z.number().optional().describe("The primary numerical value for a data point (e.g., the height of a bar)."),
+    size: z.number().optional().describe("The numerical value used for treemaps or other size-based charts."),
     x: z.number().optional().describe("The x-coordinate for a scatter plot."),
     y: z.number().optional().describe("The y-coordinate for a scatter plot."),
     z: z.number().optional().describe("The size value for a scatter plot bubble."),
+    children: z.array(z.lazy(() => ChartDataItemSchema)).optional().describe("Child nodes for hierarchical charts like treemaps."),
 }).describe("A single data item for a chart, accommodating various chart types.");
 
 
 const RecommendedVisualizationSchema = z.object({
-    chartType: z.enum(['bar', 'pie', 'scatter', 'line']).describe('The type of chart recommended.'),
+    chartType: z.enum(['bar', 'pie', 'scatter', 'line', 'area', 'treemap']).describe('The type of chart recommended.'),
     title: z.string().describe('A descriptive title for the chart.'),
     caption: z.string().describe('A brief caption explaining the insight from the chart.'),
-    data: z.array(ChartDataItemSchema).describe('The data structured for the chart. For scatter plots, should contain x, y, and z (size) keys. For others, typically name and value keys.'),
+    data: z.array(ChartDataItemSchema).describe('The data structured for the chart. For scatter plots, should contain x, y, and z (size) keys. For others, typically name and value keys. For treemaps, use name and size.'),
     config: z.object({
-        dataKey: z.string().describe("The key for the main data value in the data array (e.g., 'value' or 'count')."),
+        dataKey: z.string().describe("The key for the main data value in the data array (e.g., 'value' or 'count'). For treemaps, this should be 'size'."),
         indexKey: z.string().describe("The key for the label/index in the data array (e.g., 'name' or 'date')."),
         xAxisLabel: z.string().optional().describe("Label for the X-axis."),
         yAxisLabel: z.string().optional().describe("Label for the Y-axis."),
@@ -89,12 +91,13 @@ Based on your analysis of the CSV data, generate a JSON output containing:
 3.  **Missing Values**: Top columns with missing data and their counts. Title should be 'Missing Values'. If no missing values, omit this field.
 4.  **Column Types**: Inferred data types for each column. Title should be 'Column Types'.
 5.  **Recommended Visualizations**: This is the most important part. Analyze the data to find the most insightful stories and generate up to 4 of the most relevant visualizations to tell these stories. For each visualization, you **MUST** provide a \`title\`, \`caption\`, \`chartType\`, \`data\`, and \`config\`.
-    -   Choose the best \`chartType\`: 'bar', 'pie', 'scatter', or 'line'.
+    -   Choose the best \`chartType\`: 'bar', 'pie', 'scatter', 'line', 'area', or 'treemap'.
     -   Provide a clear \`title\` and a concise \`caption\` explaining the insight.
     -   Generate the \`data\` array needed to render the chart with Recharts, adhering to the ChartDataItemSchema.
-        -   For bar/pie/line charts, use objects with 'name' and 'value' keys.
+        -   For bar/pie/line/area charts, use objects with 'name' and 'value' keys.
         -   For scatter plots, use 'x', 'y', and 'z' (for bubble size) keys.
-    -   Provide a \`config\` object with \`dataKey\` (the main value, e.g., 'value'), \`indexKey\` (the label, e.g., 'name'), and optional axis labels.
+        -   For treemaps, use 'name' and 'size' keys.
+    -   Provide a \`config\` object with \`dataKey\` (the main value, e.g., 'value' or 'size'), \`indexKey\` (the label, e.g., 'name'), and optional axis labels.
 
 **Example for a recommended bar chart:**
 \`\`\`json

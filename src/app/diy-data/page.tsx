@@ -5,7 +5,7 @@ import { useState, useRef, useCallback, ChangeEvent } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Wand2, Download, Bot } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line, AreaChart, Area, Treemap } from 'recharts';
 import { toPng } from 'html-to-image';
 
 import { generateChart, type GenerateChartOutput } from '@/ai/flows/generate-chart';
@@ -76,6 +76,39 @@ const LineChartRenderer = ({ vis }: { vis: VisualizationResult }) => (
     </ResponsiveContainer>
 );
 
+const AreaChartRenderer = ({ vis }: { vis: VisualizationResult }) => (
+    <ResponsiveContainer width="100%" height={350}>
+        <AreaChart data={vis.data} margin={{ top: 5, right: 30, left: 20, bottom: 20 }}>
+            <defs>
+                <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey={vis.config.indexKey} angle={-30} textAnchor="end" height={60} interval="preserveStartEnd" tick={{ fontSize: 12 }} label={{ value: vis.config.xAxisLabel, position: 'insideBottom', offset: -15 }} />
+            <YAxis tick={{ fontSize: 12 }} label={{ value: vis.config.yAxisLabel, angle: -90, position: 'insideLeft' }} />
+            <Tooltip cursor={{ stroke: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+            <Area type="monotone" dataKey={vis.config.dataKey} stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorUv)" />
+        </AreaChart>
+    </ResponsiveContainer>
+);
+
+const TreemapRenderer = ({ vis }: { vis: VisualizationResult }) => (
+    <ResponsiveContainer width="100%" height={350}>
+        <Treemap
+            data={vis.data}
+            dataKey={vis.config.dataKey || 'size'}
+            nameKey={vis.config.indexKey || 'name'}
+            aspectRatio={4 / 3}
+            stroke="hsl(var(--card))"
+            fill="hsl(var(--muted))"
+        >
+            <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+        </Treemap>
+    </ResponsiveContainer>
+);
+
 const DynamicChartRenderer = ({ visualization }: { visualization: VisualizationResult }) => {
   const chartRef = useRef<HTMLDivElement>(null);
 
@@ -109,6 +142,8 @@ const DynamicChartRenderer = ({ visualization }: { visualization: VisualizationR
       case 'pie': return <PieChartRenderer vis={visualization} />;
       case 'scatter': return <ScatterChartRenderer vis={visualization} />;
       case 'line': return <LineChartRenderer vis={visualization} />;
+      case 'area': return <AreaChartRenderer vis={visualization} />;
+      case 'treemap': return <TreemapRenderer vis={visualization} />;
       default: return <div className="flex items-center justify-center h-full text-muted-foreground">Unsupported chart type.</div>;
     }
   };
@@ -209,7 +244,7 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <Textarea
-              placeholder="e.g., 'Show me a bar chart of the average salary by department' or 'A scatter plot of age vs. income'"
+              placeholder="e.g., 'Show me an area chart of sales over time' or 'a treemap of market cap by company'"
               value={request}
               onChange={(e) => setRequest(e.target.value)}
               className="min-h-[100px]"
