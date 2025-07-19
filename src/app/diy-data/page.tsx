@@ -4,11 +4,12 @@
 import { useState, useRef, useCallback, ChangeEvent } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Wand2, Download } from 'lucide-react';
+import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Wand2, Download, Bot } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line } from 'recharts';
 import { toPng } from 'html-to-image';
 
 import { generateChart, type GenerateChartOutput } from '@/ai/flows/generate-chart';
+import { enhanceChartRequest } from '@/ai/flows/enhance-chart-request';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -136,8 +137,34 @@ const DynamicChartRenderer = ({ visualization }: { visualization: VisualizationR
 const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string }) => {
   const [request, setRequest] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isEnhancing, setIsEnhancing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chart, setChart] = useState<VisualizationResult | null>(null);
+
+  const getColumnNames = (): string[] => {
+    if (!csvData) return [];
+    const lines = csvData.trim().split('\n');
+    if (lines.length === 0) return [];
+    return lines[0].split(',').map(name => name.trim());
+  };
+
+  const handleEnhanceRequest = async () => {
+    if (!request.trim()) return;
+
+    setIsEnhancing(true);
+    setError(null);
+    try {
+        const columnNames = getColumnNames();
+        const { enhancedRequest } = await enhanceChartRequest({ request, columnNames });
+        setRequest(enhancedRequest);
+    } catch (err) {
+        console.error(err);
+        setError("Could not enhance the request. Please try rephrasing.");
+    } finally {
+        setIsEnhancing(false);
+    }
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,7 +203,7 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
             Create a Custom Visualization
           </CardTitle>
           <CardDescription>
-            File loaded: <strong>{fileName}</strong>. Describe the chart you want to create in plain English.
+            File loaded: <strong>{fileName}</strong>. Describe the chart you want to create, or use the Enhance button to let AI refine your idea.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -186,10 +213,22 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
               value={request}
               onChange={(e) => setRequest(e.target.value)}
               className="min-h-[100px]"
-              disabled={isLoading}
+              disabled={isLoading || isEnhancing}
             />
-            <div className="flex justify-end">
-              <Button type="submit" disabled={!request.trim() || isLoading}>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={handleEnhanceRequest} disabled={!request.trim() || isLoading || isEnhancing}>
+                 {isEnhancing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Enhancing...
+                  </>
+                ) : (
+                  <>
+                    <Bot className="mr-2 h-4 w-4" /> Enhance
+                  </>
+                )}
+              </Button>
+              <Button type="submit" disabled={!request.trim() || isLoading || isEnhancing}>
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
