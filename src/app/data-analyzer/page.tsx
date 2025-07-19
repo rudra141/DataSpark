@@ -4,7 +4,7 @@
 import { useState, useRef, useCallback, ChangeEvent } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download } from 'lucide-react';
+import { AlertTriangle, BarChart as BarChartIcon, FileUp, Loader2, Sparkles, Table, Download, Users, Link as LinkIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line, AreaChart, Area, Treemap } from 'recharts';
 import { toPng } from 'html-to-image';
 import * as XLSX from 'xlsx';
@@ -17,6 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
+import { Table as UiTable, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 
 type AnalysisResult = AnalyzeDataOutput;
@@ -388,12 +389,76 @@ export default function DataAnalyzerPage() {
                        </CardDescription>
                    </CardHeader>
                 </Card>
+
+                {result.executiveSummary && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-primary" />
+                        AI Executive Summary
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground leading-relaxed">{result.executiveSummary}</p>
+                    </CardContent>
+                  </Card>
+                )}
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {result.summaryStats && <InsightCard title="Key Statistics" stats={result.summaryStats.stats} emptyText="No summary statistics generated."/>}
                   {result.missingValues && <InsightCard title={result.missingValues.title} stats={result.missingValues.stats} emptyText="No missing values found." />}
                   {result.columnTypes && <InsightCard title={result.columnTypes.title} stats={result.columnTypes.stats} />}
                 </div>
+
+                {result.correlationAnalysis && (
+                  <Card>
+                    <CardHeader>
+                       <CardTitle className="text-lg flex items-center gap-2">
+                          <LinkIcon className="h-5 w-5" />
+                          {result.correlationAnalysis.title}
+                       </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {result.correlationAnalysis.correlations.map((corr, index) => (
+                        <div key={index}>
+                          <p className="text-sm font-medium">{corr.variable1} & {corr.variable2}: <span className="font-mono text-primary">{corr.correlation.toFixed(2)}</span></p>
+                          <p className="text-sm text-muted-foreground">{corr.interpretation}</p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {result.segmentationAnalysis && (
+                   <Card>
+                    <CardHeader>
+                       <CardTitle className="text-lg flex items-center gap-2">
+                          <Users className="h-5 w-5" />
+                          {result.segmentationAnalysis.title}
+                       </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                       <UiTable>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Segment</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead className="text-right">Count</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {result.segmentationAnalysis.segments.map((seg, index) => (
+                            <TableRow key={index}>
+                              <TableCell className="font-medium">{seg.name}</TableCell>
+                              <TableCell>{seg.description}</TableCell>
+                              <TableCell className="text-right font-mono">{seg.count}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </UiTable>
+                    </CardContent>
+                  </Card>
+                )}
                 
                 {result.recommendedVisualizations.length > 0 && (
                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

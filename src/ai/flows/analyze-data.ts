@@ -51,12 +51,25 @@ const RecommendedVisualizationSchema = z.object({
     }).describe('Configuration for rendering the chart.'),
 });
 
+const CorrelationSchema = z.object({
+  variable1: z.string(),
+  variable2: z.string(),
+  correlation: z.number().describe('The correlation coefficient, from -1 to 1.'),
+  interpretation: z.string().describe('A plain-English interpretation of the correlation.'),
+});
+
+const SegmentSchema = z.object({
+  name: z.string().describe('The name of the segment (e.g., "High-Value Customers").'),
+  description: z.string().describe('A description of the segment\'s characteristics.'),
+  count: z.number().describe('The number of data points in this segment.'),
+});
 
 const AnalyzeDataOutputSchema = z.object({
   fileName: z.string().describe('The name of the analyzed file.'),
   rowCount: z.number().describe('The total number of rows in the dataset.'),
   columnCount: z.number().describe('The total number of columns in the dataset.'),
   columnNames: z.array(z.string()).describe('An array of all column names.'),
+  executiveSummary: z.string().describe("A concise, one-paragraph summary of the most critical insights from the dataset.").optional(),
   summaryStats: z.object({
     title: z.string(),
     stats: z.array(ColumnStatSchema),
@@ -69,6 +82,14 @@ const AnalyzeDataOutputSchema = z.object({
     title: z.string(),
     stats: z.array(ColumnStatSchema),
   }).describe('The inferred data type for each column (e.g., Numeric, Categorical, Text).').optional(),
+  correlationAnalysis: z.object({
+    title: z.string(),
+    correlations: z.array(CorrelationSchema).describe('An array of the most significant correlations found.'),
+  }).describe('An analysis of correlations between numeric columns.').optional(),
+  segmentationAnalysis: z.object({
+      title: z.string(),
+      segments: z.array(SegmentSchema).describe('An array of identified customer/data segments.'),
+  }).describe('An analysis of distinct segments or clusters in the data.').optional(),
   recommendedVisualizations: z.array(RecommendedVisualizationSchema).describe('An array of AI-recommended visualizations based on the data analysis.'),
 });
 export type AnalyzeDataOutput = z.infer<typeof AnalyzeDataOutputSchema>;
@@ -85,38 +106,34 @@ const prompt = ai.definePrompt({
   prompt: `You are an expert data analyst. A user has uploaded a dataset named '{{{fileName}}}' for analysis.
 The dataset has already been determined to have {{{rowCount}}} rows.
 
-Based on your analysis of the CSV data, generate a JSON output containing:
-1.  **Basic Info**: fileName, columnCount, columnNames.
-2.  **Key Statistics**: A summary of important stats for numerical and categorical columns. Title should be 'Key Statistics'. If not applicable, omit this field.
-3.  **Missing Values**: Top columns with missing data and their counts. Title should be 'Missing Values'. If no missing values, omit this field.
-4.  **Column Types**: Inferred data types for each column. Title should be 'Column Types'.
-5.  **Recommended Visualizations**: This is the most important part. Analyze the data to find the most insightful stories and generate up to 4 of the most relevant visualizations to tell these stories. For each visualization, you **MUST** provide a \`title\`, \`caption\`, \`chartType\`, \`data\`, and \`config\`.
-    -   Choose the best \`chartType\`: 'bar', 'pie', 'scatter', 'line', 'area', 'treemap', or 'histogram'.
-    -   For **histograms**, you must bin the numerical data into appropriate ranges (e.g., 0-10, 11-20) and provide the count for each bin. The 'name' in the data should be the bin range, and the 'value' should be the count.
-    -   Provide a clear \`title\` and a concise \`caption\` explaining the insight.
-    -   Generate the \`data\` array needed to render the chart with Recharts, adhering to the ChartDataItemSchema.
-        -   For bar/pie/line/area/histogram charts, use objects with 'name' and 'value' keys.
-        -   For scatter plots, use 'x', 'y', and 'z' (for bubble size) keys.
-        -   For treemaps, use 'name' and 'size' keys.
-    -   Provide a \`config\` object with \`dataKey\` (the main value, e.g., 'value' or 'size'), \`indexKey\` (the label, e.g., 'name'), and optional axis labels.
+Your task is to perform a comprehensive analysis and generate a single JSON object.
 
-**Example for a recommended histogram:**
+**JSON Output Structure:**
+1.  **Basic Info**: fileName, columnCount, columnNames.
+2.  **Executive Summary**: (Optional) Provide a concise, one-paragraph summary of the most critical insights a business leader would want to know. If the data is not suitable for a summary, omit this field.
+3.  **Key Statistics**: (Optional) General descriptive statistics. Title should be 'Key Statistics'. Omit if not applicable.
+4.  **Missing Values**: (Optional) Top columns with missing data. Title should be 'Missing Values'. Omit if none.
+5.  **Column Types**: Inferred data types for each column. Title should be 'Column Types'.
+6.  **Correlation Analysis**: (Optional) If there are multiple numeric columns, identify the most significant positive or negative correlations. For each, provide the two variables, the correlation coefficient, and a plain-English interpretation. Title should be 'Correlation Analysis'. Omit if not applicable.
+7.  **Segmentation Analysis**: (Optional) If the data appears to contain distinct groups (e.g., customer data), identify 2-4 segments. For each, provide a name, description, and count. Title should be 'Segmentation Analysis'. Omit if not applicable.
+8.  **Recommended Visualizations**: This is crucial. Generate up to 4 of the most relevant visualizations. For each, you **MUST** provide a \`title\`, \`caption\`, \`chartType\`, \`data\`, and \`config\`.
+    -   Choose the best \`chartType\`: 'bar', 'pie', 'scatter', 'line', 'area', 'treemap', or 'histogram'.
+    -   Provide a clear \`title\` and \`caption\`.
+    -   Generate the \`data\` array needed to render the chart.
+
+**Example for a Correlation:**
 \`\`\`json
 {
-  "chartType": "histogram",
-  "title": "Distribution of Ages",
-  "caption": "The majority of users are between 20-40 years old.",
-  "data": [
-    { "name": "0-10", "value": 5 },
-    { "name": "11-20", "value": 12 },
-    { "name": "21-30", "value": 45 },
-    { "name": "31-40", "value": 33 }
-  ],
-  "config": {
-    "dataKey": "value",
-    "indexKey": "name",
-    "xAxisLabel": "Age Group",
-    "yAxisLabel": "Count"
+  "correlationAnalysis": {
+    "title": "Correlation Analysis",
+    "correlations": [
+      {
+        "variable1": "YearsExperience",
+        "variable2": "Salary",
+        "correlation": 0.98,
+        "interpretation": "There is a very strong positive correlation between years of experience and salary, meaning salary tends to increase significantly with more experience."
+      }
+    ]
   }
 }
 \`\`\`
@@ -175,9 +192,12 @@ const analyzeDataFlow = ai.defineFlow(
       rowCount: rowCount, // Guaranteed to be correct.
       columnCount: modelOutput.columnCount || 0,
       columnNames: modelOutput.columnNames || [],
+      executiveSummary: modelOutput.executiveSummary,
       summaryStats: modelOutput.summaryStats,
       missingValues: modelOutput.missingValues,
       columnTypes: modelOutput.columnTypes,
+      correlationAnalysis: modelOutput.correlationAnalysis,
+      segmentationAnalysis: modelOutput.segmentationAnalysis,
       recommendedVisualizations: validVisualizations, // Guaranteed to be an array of valid visualizations.
     };
 
@@ -192,5 +212,3 @@ const analyzeDataFlow = ai.defineFlow(
     }
   }
 );
-
-    
