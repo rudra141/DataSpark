@@ -116,7 +116,7 @@ Your task is to perform a comprehensive analysis and generate a single JSON obje
 5.  **Column Types**: Inferred data types for each column. Title should be 'Column Types'.
 6.  **Correlation Analysis**: (Optional) If there are multiple numeric columns, identify the most significant positive or negative correlations. For each, provide the two variables, the correlation coefficient, and a plain-English interpretation. Title should be 'Correlation Analysis'. Omit if not applicable.
 7.  **Segmentation Analysis**: (Optional) If the data appears to contain distinct groups (e.g., customer data), identify 2-4 segments. For each, provide a name, description, and count. Title should be 'Segmentation Analysis'. Omit if not applicable.
-8.  **Recommended Visualizations**: This is crucial. Generate up to 4 of the most relevant visualizations. For each, you **MUST** provide a \`title\`, \`caption\`, \`chartType\`, \`data\`, and \`config\`.
+8.  **Recommended Visualizations**: This is crucial. Generate all relevant and insightful visualizations based on the data. The number of visualizations should be determined by the data's potential for insights, not by a fixed limit. For each visualization, you **MUST** provide a \`title\`, \`caption\`, \`chartType\`, \`data\`, and \`config\`.
     -   Choose the best \`chartType\`: 'bar', 'pie', 'scatter', 'line', 'area', 'treemap', or 'histogram'.
     -   Provide a clear \`title\` and \`caption\`.
     -   Generate the \`data\` array needed to render the chart.
