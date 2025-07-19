@@ -6,7 +6,7 @@ import { dark } from '@clerk/themes';
 import { ThemeProvider } from '@/components/theme-provider';
 
 export const metadata: Metadata = {
-  title: 'FormulaFlow',
+  title: 'DataSpark',
   description: 'Generate Excel and Google Sheets formulas from natural language.',
 };
 

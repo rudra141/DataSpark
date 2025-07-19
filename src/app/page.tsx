@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowRight, Bot, BarChart, Calculator } from "lucide-react";
+import { ArrowRight, Bot, BarChart, Calculator, Wand2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Header } from "@/components/header";
 
@@ -37,16 +37,25 @@ const features = [
     icon: <Calculator className="h-8 w-8 text-primary" />,
     title: "Formula Generator",
     description: "Describe any calculation in plain English. Our AI generates the precise, ready-to-use formula for Excel and Google Sheets.",
+    href: "/formula"
   },
   {
     icon: <BarChart className="h-8 w-8 text-primary" />,
     title: "Data Analyzer",
     description: "Upload your CSV file and instantly receive key statistics, actionable insights, and beautiful, AI-recommended charts.",
+    href: "/data-analyzer"
   },
   {
     icon: <Bot className="h-8 w-8 text-primary" />,
     title: "Chat with Data",
     description: "Go beyond static reports. Ask questions in natural language and get specific, contextual answers directly from your dataset.",
+    href: "/chat-with-data"
+  },
+   {
+    icon: <Wand2 className="h-8 w-8 text-primary" />,
+    title: "DIY with Data",
+    description: "Your personal data artist. Use plain English to generate the exact charts and visualizations you need, on demand.",
+    href: "/diy-data"
   },
 ];
 
@@ -56,21 +65,21 @@ const testimonials = [
     title: "Data Analyst",
     avatar: "https://placehold.co/100x100.png",
     dataAiHint: "man portrait",
-    quote: "This tool has saved me hours of frustration. I can finally focus on analysis instead of wrestling with complex syntax.",
+    quote: "DataSpark has saved me hours of frustration. I can finally focus on analysis instead of wrestling with complex syntax and chart setups.",
   },
   {
     name: "Samantha Lee",
     title: "Marketing Manager",
     avatar: "https://placehold.co/100x100.png",
     dataAiHint: "woman portrait",
-    quote: "As someone who isn't a spreadsheet wizard, FormulaFlow is a lifesaver. It's so intuitive and the explanations are incredibly helpful.",
+    quote: "As someone who isn't a spreadsheet wizard, DataSpark is a lifesaver. The chat and DIY features are incredibly powerful.",
   },
   {
     name: "David Chen",
     title: "Small Business Owner",
     avatar: "https://placehold.co/100x100.png",
     dataAiHint: "man smile",
-    quote: "I use this daily to manage my inventory and finances. It's like having a spreadsheet expert on my team 24/7.",
+    quote: "I use this daily to manage my inventory and finances. It's like having a data expert on my team 24/7.",
   },
 ];
 
@@ -104,7 +113,7 @@ export default function HomePage() {
             className="mt-6 max-w-3xl mx-auto text-xl text-muted-foreground"
             variants={itemVariants}
           >
-            Generate formulas, analyze datasets, and chat with your data in plain English. Stop wrestling with data and start getting answers.
+            Generate formulas, analyze datasets, and build custom charts in plain English. Stop wrestling with data and start getting answers.
           </motion.p>
           <motion.div variants={itemVariants} className="mt-10">
              <CTAButton />
@@ -124,20 +133,22 @@ export default function HomePage() {
             <h2 className="font-headline text-4xl font-bold">A Full-Featured Data Toolkit</h2>
             <p className="mt-4 text-lg text-muted-foreground">Everything you need for spreadsheet and data mastery.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
               <motion.div key={index} variants={itemVariants}>
-                <Card className="h-full text-center bg-card/50 backdrop-blur-sm border-primary/10 hover:border-primary/30 transition-all duration-300 hover:shadow-primary/10 hover:shadow-lg">
-                  <CardHeader>
-                    <div className="mx-auto bg-primary/10 rounded-full p-3 w-fit">
-                      {feature.icon}
-                    </div>
-                    <CardTitle className="font-headline mt-4">{feature.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">{feature.description}</p>
-                  </CardContent>
-                </Card>
+                <Link href={feature.href}>
+                  <Card className="h-full text-center bg-card/50 backdrop-blur-sm border-primary/10 hover:border-primary/30 transition-all duration-300 hover:shadow-primary/10 hover:shadow-lg">
+                    <CardHeader>
+                      <div className="mx-auto bg-primary/10 rounded-full p-3 w-fit">
+                        {feature.icon}
+                      </div>
+                      <CardTitle className="font-headline mt-4">{feature.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground">{feature.description}</p>
+                    </CardContent>
+                  </Card>
+                </Link>
               </motion.div>
             ))}
           </div>
@@ -220,7 +231,7 @@ export default function HomePage() {
           variants={containerVariants}
         >
           <motion.h2 className="font-headline text-4xl font-bold" variants={itemVariants}>
-            Ready to Simplify Your Spreadsheets?
+            Ready to Simplify Your Data Workflow?
           </motion.h2>
           <motion.p className="mt-4 text-lg text-muted-foreground" variants={itemVariants}>
             Boost your productivity and become a data pro today.
@@ -232,7 +243,7 @@ export default function HomePage() {
       </main>
       
       <footer className="container mx-auto p-8 text-center text-muted-foreground text-sm">
-        © {new Date().getFullYear()} FormulaFlow. All Rights Reserved.
+        © {new Date().getFullYear()} DataSpark. All Rights Reserved.
       </footer>
     </div>
   );

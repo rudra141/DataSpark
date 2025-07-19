@@ -51,7 +51,7 @@ export function AppSidebar({ children }: { children?: React.ReactNode }) {
                 <Sparkles className="h-4 w-4 text-primary" />
               </Button>
             </Link>
-            <div className="font-headline text-lg font-bold text-primary">FormulaFlow</div>
+            <div className="font-headline text-lg font-bold text-primary">DataSpark</div>
           </div>
         </div>
       </SidebarHeader>
