@@ -24,7 +24,7 @@ const ChartDataItemSchema = z.object({
 }).describe("A single data item for a chart, accommodating various chart types.");
 
 const RecommendedVisualizationSchema = z.object({
-    chartType: z.enum(['bar', 'pie', 'scatter', 'line', 'area', 'treemap']).describe('The type of chart recommended.'),
+    chartType: z.enum(['bar', 'pie', 'scatter', 'line', 'area', 'treemap', 'histogram']).describe('The type of chart recommended.'),
     title: z.string().describe('A descriptive title for the chart.'),
     caption: z.string().describe('A brief caption explaining the insight from the chart.'),
     data: z.array(ChartDataItemSchema).describe('The data structured for the chart. For scatter plots, should contain x, y, and z (size) keys. For others, typically name and value keys. For treemaps, use name and size.'),
@@ -61,12 +61,13 @@ Your task is to analyze the user's request and the provided CSV data, and then g
 **User Request**: "{{request}}"
 
 **Instructions**:
-1.  Read the user's request carefully to understand the desired chart type (bar, pie, scatter, line, area, treemap), the data columns to use, and any other specifications.
-2.  Analyze the provided CSV data to extract and structure the data needed for the chart.
-3.  Generate a single JSON object that strictly adheres to the output schema. This object **MUST** have a 'title', 'caption', 'chartType', 'data', and 'config'.
-4.  If the request is ambiguous or cannot be fulfilled with the given data, you should still attempt to create the most reasonable chart possible that matches the user's intent. Do not ask for clarification.
-5.  Ensure the 'data' array in your JSON output is correctly formatted for the specified 'chartType'.
-    -   For bar, pie, line, and area charts, use 'name' and 'value' keys.
+1.  Read the user's request carefully to understand the desired chart type (bar, pie, scatter, line, area, treemap, histogram), the data columns to use, and any other specifications.
+2.  For a **histogram** request, you **must** bin the data from a single numerical column into sensible ranges (e.g., 0-100, 101-200, etc.) and count the occurrences in each range. The output 'name' should be the range string, and 'value' should be the count.
+3.  Analyze the provided CSV data to extract and structure the data needed for the chart.
+4.  Generate a single JSON object that strictly adheres to the output schema. This object **MUST** have a 'title', 'caption', 'chartType', 'data', and 'config'.
+5.  If the request is ambiguous or cannot be fulfilled with the given data, you should still attempt to create the most reasonable chart possible that matches the user's intent. Do not ask for clarification.
+6.  Ensure the 'data' array in your JSON output is correctly formatted for the specified 'chartType'.
+    -   For bar, pie, line, area, and histogram charts, use 'name' and 'value' keys.
     -   For scatter plots, use 'x', 'y', and 'z' keys.
     -   For treemaps, use 'name' and 'size' keys.
 
@@ -114,3 +115,5 @@ const generateChartFlow = ai.defineFlow(
     }
   }
 );
+
+    

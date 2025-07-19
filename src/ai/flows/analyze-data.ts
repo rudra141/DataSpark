@@ -39,7 +39,7 @@ const ChartDataItemSchema = z.object({
 
 
 const RecommendedVisualizationSchema = z.object({
-    chartType: z.enum(['bar', 'pie', 'scatter', 'line', 'area', 'treemap']).describe('The type of chart recommended.'),
+    chartType: z.enum(['bar', 'pie', 'scatter', 'line', 'area', 'treemap', 'histogram']).describe('The type of chart recommended.'),
     title: z.string().describe('A descriptive title for the chart.'),
     caption: z.string().describe('A brief caption explaining the insight from the chart.'),
     data: z.array(ChartDataItemSchema).describe('The data structured for the chart. For scatter plots, should contain x, y, and z (size) keys. For others, typically name and value keys. For treemaps, use name and size.'),
@@ -91,27 +91,32 @@ Based on your analysis of the CSV data, generate a JSON output containing:
 3.  **Missing Values**: Top columns with missing data and their counts. Title should be 'Missing Values'. If no missing values, omit this field.
 4.  **Column Types**: Inferred data types for each column. Title should be 'Column Types'.
 5.  **Recommended Visualizations**: This is the most important part. Analyze the data to find the most insightful stories and generate up to 4 of the most relevant visualizations to tell these stories. For each visualization, you **MUST** provide a \`title\`, \`caption\`, \`chartType\`, \`data\`, and \`config\`.
-    -   Choose the best \`chartType\`: 'bar', 'pie', 'scatter', 'line', 'area', or 'treemap'.
+    -   Choose the best \`chartType\`: 'bar', 'pie', 'scatter', 'line', 'area', 'treemap', or 'histogram'.
+    -   For **histograms**, you must bin the numerical data into appropriate ranges (e.g., 0-10, 11-20) and provide the count for each bin. The 'name' in the data should be the bin range, and the 'value' should be the count.
     -   Provide a clear \`title\` and a concise \`caption\` explaining the insight.
     -   Generate the \`data\` array needed to render the chart with Recharts, adhering to the ChartDataItemSchema.
-        -   For bar/pie/line/area charts, use objects with 'name' and 'value' keys.
+        -   For bar/pie/line/area/histogram charts, use objects with 'name' and 'value' keys.
         -   For scatter plots, use 'x', 'y', and 'z' (for bubble size) keys.
         -   For treemaps, use 'name' and 'size' keys.
     -   Provide a \`config\` object with \`dataKey\` (the main value, e.g., 'value' or 'size'), \`indexKey\` (the label, e.g., 'name'), and optional axis labels.
 
-**Example for a recommended bar chart:**
+**Example for a recommended histogram:**
 \`\`\`json
 {
-  "chartType": "bar",
-  "title": "Sales by Region",
-  "caption": "North America has the highest sales.",
+  "chartType": "histogram",
+  "title": "Distribution of Ages",
+  "caption": "The majority of users are between 20-40 years old.",
   "data": [
-    { "name": "North America", "value": 5000 },
-    { "name": "Europe", "value": 3200 }
+    { "name": "0-10", "value": 5 },
+    { "name": "11-20", "value": 12 },
+    { "name": "21-30", "value": 45 },
+    { "name": "31-40", "value": 33 }
   ],
   "config": {
     "dataKey": "value",
-    "indexKey": "name"
+    "indexKey": "name",
+    "xAxisLabel": "Age Group",
+    "yAxisLabel": "Count"
   }
 }
 \`\`\`
@@ -187,3 +192,5 @@ const analyzeDataFlow = ai.defineFlow(
     }
   }
 );
+
+    

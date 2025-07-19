@@ -139,6 +139,7 @@ const DynamicChartRenderer = ({ visualization }: { visualization: VisualizationR
     
     switch (visualization.chartType) {
       case 'bar': return <BarChartRenderer vis={visualization} />;
+      case 'histogram': return <BarChartRenderer vis={visualization} />;
       case 'pie': return <PieChartRenderer vis={visualization} />;
       case 'scatter': return <ScatterChartRenderer vis={visualization} />;
       case 'line': return <LineChartRenderer vis={visualization} />;
@@ -440,3 +441,5 @@ export default function DIYDataPage() {
     </SidebarProvider>
   );
 }
+
+    
