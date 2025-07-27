@@ -3,19 +3,19 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, Download, Loader2, Sparkles, Wand2 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line } from 'recharts';
+import { AlertTriangle, Download, Loader2, Sparkles, Wand2, FileUp } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line, AreaChart, Area, Treemap } from 'recharts';
 import { toPng } from 'html-to-image';
+import * as XLSX from 'xlsx';
 
 import { generateChart, type GenerateChartOutput } from '@/ai/flows/generate-chart';
 import { enhanceChartRequest } from '@/ai/flows/enhance-chart-request';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Textarea } from '@/components/ui/textarea';
-import { FileUpload } from '@/components/file-upload';
 
 type VisualizationResult = NonNullable<GenerateChartOutput>;
 
@@ -74,6 +74,34 @@ const LineChartRenderer = ({ vis }: { vis: VisualizationResult }) => (
     </ResponsiveContainer>
 );
 
+const AreaChartRenderer = ({ vis }: { vis: VisualizationResult }) => (
+    <ResponsiveContainer width="100%" height={350}>
+        <AreaChart data={vis.data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey={vis.config.indexKey} tick={{ fontSize: 12 }} />
+            <YAxis tick={{ fontSize: 12 }} />
+            <Tooltip cursor={{ stroke: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+            <Area type="monotone" dataKey={vis.config.dataKey} stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
+        </AreaChart>
+    </ResponsiveContainer>
+);
+
+const TreemapRenderer = ({ vis }: { vis: VisualizationResult }) => (
+    <ResponsiveContainer width="100%" height={350}>
+        <Treemap
+            data={vis.data}
+            dataKey="value"
+            nameKey="name"
+            aspectRatio={4 / 3}
+            stroke="#fff"
+            fill="hsl(var(--primary))"
+        >
+             <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+        </Treemap>
+    </ResponsiveContainer>
+);
+
+
 const DynamicChartRenderer = ({ visualization }: { visualization: VisualizationResult }) => {
   const chartRef = useRef<HTMLDivElement>(null);
 
@@ -103,11 +131,21 @@ const DynamicChartRenderer = ({ visualization }: { visualization: VisualizationR
     }
     
     switch (visualization.chartType) {
-      case 'bar': return <BarChartRenderer vis={visualization} />;
-      case 'pie': return <PieChartRenderer vis={visualization} />;
-      case 'scatter': return <ScatterChartRenderer vis={visualization} />;
-      case 'line': return <LineChartRenderer vis={visualization} />;
-      default: return <div className="flex items-center justify-center h-full text-muted-foreground">Unsupported chart type.</div>;
+        case 'bar':
+        case 'histogram':
+            return <BarChartRenderer vis={visualization} />;
+        case 'pie':
+            return <PieChartRenderer vis={visualization} />;
+        case 'scatter':
+            return <ScatterChartRenderer vis={visualization} />;
+        case 'line':
+            return <LineChartRenderer vis={visualization} />;
+        case 'area':
+            return <AreaChartRenderer vis={visualization} />;
+        case 'treemap':
+            return <TreemapRenderer vis={visualization} />;
+        default:
+            return <div className="flex items-center justify-center h-full text-muted-foreground">Unsupported chart type.</div>;
     }
   };
 
@@ -143,7 +181,7 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
     if (!csvData) return [];
     const lines = csvData.trim().split('\n');
     if (lines.length === 0) return [];
-    return lines[0].split(',').map(name => name.trim());
+    return lines[0].split(',').map(name => name.trim().replace(/"/g, ''));
   };
 
   const handleEnhanceRequest = async () => {
@@ -276,6 +314,89 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
   );
 };
 
+const FileUpload = ({ onFileLoaded }: { onFileLoaded: (csvData: string, fileName: string) => void }) => {
+    const [file, setFile] = useState<File | null>(null);
+    const [error, setError] = useState<string | null>(null);
+  
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const selectedFile = e.target.files?.[0];
+      if (selectedFile) {
+        if (selectedFile.size > 5 * 1024 * 1024) { // 5MB limit
+          setError("File is too large. Please upload a file smaller than 5MB.");
+          setFile(null);
+          return;
+        }
+        if (!selectedFile.name.endsWith('.csv') && !selectedFile.name.endsWith('.xlsx')) {
+          setError("Invalid file type. Please upload a .csv or .xlsx file.");
+          setFile(null);
+          return;
+        }
+        
+        setError(null);
+        setFile(selectedFile);
+  
+        try {
+          if (selectedFile.name.endsWith('.xlsx')) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              const data = event.target?.result;
+              if (data) {
+                  const workbook = XLSX.read(data, { type: 'array' });
+                  const sheetName = workbook.SheetNames[0];
+                  const worksheet = workbook.Sheets[sheetName];
+                  const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
+                  onFileLoaded(csvOutput, selectedFile.name);
+              }
+            };
+            reader.readAsArrayBuffer(selectedFile);
+          } else {
+            const fileContent = await selectedFile.text();
+            onFileLoaded(fileContent, selectedFile.name);
+          }
+        } catch (err) {
+          setError("Could not read file. Please check if it's corrupted and try again.");
+          console.error(err);
+        }
+      }
+    };
+  
+    return (
+      <div className="w-full">
+          <Card>
+          <CardHeader>
+              <CardTitle>Upload Your Data File</CardTitle>
+              <CardDescription>
+              Select a .csv or .xlsx file from your computer. Max file size: 5MB.
+              </CardDescription>
+          </CardHeader>
+          <CardContent>
+              <label htmlFor="file-upload" className="w-full">
+                  <div className="flex items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                      <FileUp className="h-6 w-6" />
+                      <span>{file ? file.name : 'Click to select a file'}</span>
+                  </div>
+                  </div>
+                  <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv,.xlsx" />
+              </label>
+          </CardContent>
+          </Card>
+  
+          <AnimatePresence>
+              {error && (
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="mt-4">
+                  <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+              </motion.div>
+              )}
+          </AnimatePresence>
+      </div>
+    );
+};
+
 export default function DIYDataPage() {
     const [csvData, setCsvData] = useState<string | null>(null);
     const [fileName, setFileName] = useState<string | null>(null);
@@ -296,7 +417,7 @@ export default function DIYDataPage() {
                     DIY with Data
                     </h1>
                     <p className="text-muted-foreground mt-2">
-                    Upload a CSV file and use plain English to generate the exact charts you need.
+                    Upload a CSV or XLSX file and use plain English to generate the exact charts you need.
                     </p>
                 </header>
         
@@ -307,16 +428,7 @@ export default function DIYDataPage() {
                         </motion.div>
                     ) : (
                         <motion.div key="upload-form" className="w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                            <FileUpload onFileLoaded={handleFileLoaded}>
-                                {/* No action button needed here as loading the file is the action */}
-                            </FileUpload>
-                             <Alert className="mt-4">
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle>No Data Loaded</AlertTitle>
-                                <AlertDescription>
-                                    Please upload a file to start creating charts, or analyze a file first on the Data Analyzer page.
-                                </AlertDescription>
-                            </Alert>
+                            <FileUpload onFileLoaded={handleFileLoaded} />
                         </motion.div>
                     )}
                 </AnimatePresence>

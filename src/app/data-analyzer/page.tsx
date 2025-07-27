@@ -3,16 +3,16 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, BarChart as BarChartIcon, Download, Loader2, Sparkles, Table } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line } from 'recharts';
+import { AlertTriangle, BarChart as BarChartIcon, Download, Loader2, Sparkles, Table, BrainCircuit, Users, LineChart as LineChartIcon, FileUp } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line, AreaChart, Area, Treemap } from 'recharts';
 import { toPng } from 'html-to-image';
+import * as XLSX from 'xlsx';
 
 import { analyzeData, type AnalyzeDataOutput } from '@/ai/flows/analyze-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileUpload } from '@/components/file-upload';
 import { AppSidebar } from '@/components/app-sidebar';
 
 type AnalysisResult = AnalyzeDataOutput;
@@ -125,6 +125,124 @@ const LineChartRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
     </ResponsiveContainer>
 );
 
+const AreaChartRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
+    <ResponsiveContainer width="100%" height={300}>
+        <AreaChart data={vis.data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey={vis.config.indexKey} tick={{ fontSize: 12 }} />
+            <YAxis tick={{ fontSize: 12 }} />
+            <Tooltip cursor={{ stroke: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+            <Area type="monotone" dataKey={vis.config.dataKey} stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
+        </AreaChart>
+    </ResponsiveContainer>
+);
+
+const TreemapRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
+    <ResponsiveContainer width="100%" height={300}>
+        <Treemap
+            data={vis.data}
+            dataKey="value" // size of the box
+            nameKey="name" // label of the box
+            aspectRatio={4 / 3}
+            stroke="#fff"
+            fill="hsl(var(--primary))"
+        >
+            <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+        </Treemap>
+    </ResponsiveContainer>
+);
+
+const FileUpload = ({ onFileLoaded, children }: { onFileLoaded: (csvData: string, fileName: string) => void, children: React.ReactNode }) => {
+  const [file, setFile] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      if (selectedFile.size > 5 * 1024 * 1024) { // 5MB limit
+        setError("File is too large. Please upload a file smaller than 5MB.");
+        setFile(null);
+        return;
+      }
+      if (!selectedFile.name.endsWith('.csv') && !selectedFile.name.endsWith('.xlsx')) {
+        setError("Invalid file type. Please upload a .csv or .xlsx file.");
+        setFile(null);
+        return;
+      }
+      
+      setError(null);
+      setFile(selectedFile);
+      
+      // Auto-load the file content
+      try {
+        if (selectedFile.name.endsWith('.xlsx')) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const data = event.target?.result;
+            if (data) {
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
+                onFileLoaded(csvOutput, selectedFile.name);
+            }
+          };
+          reader.readAsArrayBuffer(selectedFile);
+        } else {
+          const fileContent = await selectedFile.text();
+          onFileLoaded(fileContent, selectedFile.name);
+        }
+      } catch (err) {
+        setError("Could not read file. Please check if it's corrupted and try again.");
+        console.error(err);
+      }
+    }
+  };
+
+  return (
+    <div className="w-full">
+        <Card>
+        <CardHeader>
+            <CardTitle>Upload Your Data File</CardTitle>
+            <CardDescription>
+            Select a .csv or .xlsx file from your computer. Max file size: 5MB.
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+            <label htmlFor="file-upload" className="flex-1 w-full">
+                <div className="flex items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                    <FileUp className="h-6 w-6" />
+                    <span>{file ? file.name : 'Click to select a file'}</span>
+                </div>
+                </div>
+                <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv,.xlsx" />
+            </label>
+            {children && (
+                <div className="w-full sm:w-auto">
+                    {children}
+                </div>
+            )}
+            </div>
+        </CardContent>
+        </Card>
+
+        <AnimatePresence>
+            {error && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="mt-4">
+                <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            </motion.div>
+            )}
+        </AnimatePresence>
+    </div>
+  );
+}
+
 
 const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVisualization }) => {
   const chartRef = useRef<HTMLDivElement>(null);
@@ -155,10 +273,14 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
     }
     
     switch (visualization.chartType) {
-      case 'bar': return <BarChartRenderer vis={visualization} />;
+      case 'bar':
+      case 'histogram': 
+        return <BarChartRenderer vis={visualization} />;
       case 'pie': return <PieChartRenderer vis={visualization} />;
       case 'scatter': return <ScatterChartRenderer vis={visualization} />;
       case 'line': return <LineChartRenderer vis={visualization} />;
+      case 'area': return <AreaChartRenderer vis={visualization} />;
+      case 'treemap': return <TreemapRenderer vis={visualization} />;
       default: return <div className="flex items-center justify-center h-full text-muted-foreground">Unsupported chart type: {visualization.chartType}</div>;
     }
   };
@@ -230,7 +352,7 @@ export default function DataAnalyzerPage() {
               Data Analyzer
             </h1>
             <p className="text-muted-foreground mt-2">
-              Upload a CSV file to get instant insights, statistics, and AI-recommended visualizations.
+              Upload a CSV or XLSX file to get instant insights, statistics, and AI-recommended visualizations.
             </p>
           </header>
 
@@ -271,6 +393,20 @@ export default function DataAnalyzerPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-6"
               >
+                 {result.executiveSummary && (
+                   <Card className="bg-primary/5 border-primary/20">
+                     <CardHeader>
+                       <CardTitle className="text-xl flex items-center gap-2">
+                         <Sparkles className="h-5 w-5 text-primary" />
+                         AI Executive Summary
+                       </CardTitle>
+                     </CardHeader>
+                     <CardContent>
+                       <p className="text-base leading-relaxed">{result.executiveSummary}</p>
+                     </CardContent>
+                   </Card>
+                 )}
+
                 <Card>
                   <CardHeader>
                       <CardTitle className="text-xl">Analysis for: {result.fileName}</CardTitle>
@@ -285,6 +421,60 @@ export default function DataAnalyzerPage() {
                   <InsightCard title="Missing Values" stats={result.missingValues.stats} />
                   <InsightCard title="Column Types" stats={result.columnTypes.stats} />
                 </div>
+
+                {result.correlationAnalysis && (
+                  <Card>
+                    <CardHeader>
+                       <CardTitle className="text-lg flex items-center gap-2">
+                          <LineChartIcon className="h-5 w-5" />
+                          Correlation Analysis
+                       </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-muted-foreground">{result.correlationAnalysis.interpretation}</p>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-border text-sm">
+                          <thead className="bg-muted/50">
+                            <tr>
+                              <th className="px-4 py-2 text-left font-medium"></th>
+                              {result.correlationAnalysis.matrix[0]?.values.map(v => <th key={v.column} className="px-4 py-2 text-center font-medium">{v.column}</th>)}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border">
+                            {result.correlationAnalysis.matrix.map(row => (
+                              <tr key={row.column}>
+                                <td className="px-4 py-2 font-medium">{row.column}</td>
+                                {row.values.map(v => (
+                                   <td key={v.column} className="px-4 py-2 text-center font-mono" style={{ background: `hsla(221, 83%, 53%, ${Math.abs(v.value)})`}}>{v.value.toFixed(2)}</td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {result.segmentationAnalysis && (
+                   <Card>
+                     <CardHeader>
+                       <CardTitle className="text-lg flex items-center gap-2">
+                         <Users className="h-5 w-5" />
+                          Segmentation Analysis
+                       </CardTitle>
+                     </CardHeader>
+                     <CardContent className="space-y-2">
+                       <p className="text-muted-foreground">{result.segmentationAnalysis.summary}</p>
+                        {result.segmentationAnalysis.segments.map((segment, index) => (
+                          <div key={index} className="p-3 border rounded-md bg-muted/50">
+                            <p className="font-semibold">{segment.name}</p>
+                            <p className="text-sm text-muted-foreground">{segment.description}</p>
+                          </div>
+                        ))}
+                     </CardContent>
+                   </Card>
+                )}
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {result.recommendedVisualizations.map((vis, index) => (

@@ -3,15 +3,15 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, Bot, FileUp, Loader2, Send, Sparkles } from 'lucide-react';
+import { AlertTriangle, Bot, FileUp, Loader2, Send } from 'lucide-react';
 import { chatWithData, type ChatMessage } from '@/ai/flows/chat-with-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import * as XLSX from 'xlsx';
 
 const ChatInterface = ({ csvData, fileName }: { csvData: string; fileName: string }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -121,48 +121,51 @@ const ChatInterface = ({ csvData, fileName }: { csvData: string; fileName: strin
   );
 };
 
-const FileUpload = ({ onFileLoaded, children }: { onFileLoaded: (csvData: string, fileName: string) => void, children: React.ReactNode }) => {
+const FileUpload = ({ onFileLoaded }: { onFileLoaded: (csvData: string, fileName: string) => void }) => {
   const [file, setFile] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      if (selectedFile.size > 1 * 1024 * 1024) { // 1MB limit
-        setError("File is too large. Please upload a file smaller than 1MB.");
+      if (selectedFile.size > 5 * 1024 * 1024) { // 5MB limit
+        setError("File is too large. Please upload a file smaller than 5MB.");
         setFile(null);
         return;
       }
-      if (!selectedFile.name.endsWith('.csv')) {
-        setError("Invalid file type. Please upload a .csv file.");
+      if (!selectedFile.name.endsWith('.csv') && !selectedFile.name.endsWith('.xlsx')) {
+        setError("Invalid file type. Please upload a .csv or .xlsx file.");
         setFile(null);
         return;
       }
       
       setError(null);
       setFile(selectedFile);
+
+      try {
+        if (selectedFile.name.endsWith('.xlsx')) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const data = event.target?.result;
+            if (data) {
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
+                onFileLoaded(csvOutput, selectedFile.name);
+            }
+          };
+          reader.readAsArrayBuffer(selectedFile);
+        } else {
+          const fileContent = await selectedFile.text();
+          onFileLoaded(fileContent, selectedFile.name);
+        }
+      } catch (err) {
+        setError("Could not read file. Please check if it's corrupted and try again.");
+        console.error(err);
+      }
     }
   };
-  
-  const handleLoadFile = async () => {
-      if (!file) {
-          setError("Please select a file.");
-          return;
-      }
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-          const fileContent = await file.text();
-          onFileLoaded(fileContent, file.name);
-      } catch (err) {
-          setError("Could not read file. Please check if it's corrupted and try again.");
-          console.error(err);
-      } finally {
-          setIsLoading(false);
-      }
-  }
 
   return (
     <div className="w-full">
@@ -170,24 +173,19 @@ const FileUpload = ({ onFileLoaded, children }: { onFileLoaded: (csvData: string
         <CardHeader>
             <CardTitle>Upload Your Data File</CardTitle>
             <CardDescription>
-            Select a .csv file from your computer to start asking questions. Max file size: 1MB.
+            Select a .csv or .xlsx file from your computer to start asking questions. Max file size: 5MB.
             </CardDescription>
         </CardHeader>
         <CardContent>
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-            <label htmlFor="file-upload" className="flex-1 w-full">
+            <label htmlFor="file-upload" className="w-full">
                 <div className="flex items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
                 <div className="flex items-center gap-2 text-muted-foreground">
                     <FileUp className="h-6 w-6" />
                     <span>{file ? file.name : 'Click to select a file'}</span>
                 </div>
                 </div>
-                <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv" />
+                <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv,.xlsx" />
             </label>
-            <div className="w-full sm:w-auto">
-                {children}
-            </div>
-            </div>
         </CardContent>
         </Card>
 
@@ -210,13 +208,10 @@ const FileUpload = ({ onFileLoaded, children }: { onFileLoaded: (csvData: string
 export default function ChatWithDataPage() {
   const [csvData, setCsvData] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleFileLoaded = (data: string, name: string) => {
     setCsvData(data);
     setFileName(name);
-    setError(null);
   };
 
   return (
@@ -230,7 +225,7 @@ export default function ChatWithDataPage() {
               Chat with Data
             </h1>
             <p className="text-muted-foreground mt-2">
-              Upload a CSV file and ask questions to get instant insights.
+              Upload a CSV or XLSX file and ask questions to get instant insights.
             </p>
           </header>
 
@@ -241,16 +236,7 @@ export default function ChatWithDataPage() {
               </motion.div>
             ) : (
                 <motion.div key="upload-form" className="w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    <FileUpload onFileLoaded={handleFileLoaded}>
-                        {/* No action button needed here as loading the file is the action */}
-                    </FileUpload>
-                    <Alert className="mt-4">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>No Data Loaded</AlertTitle>
-                        <AlertDescription>
-                            Please upload a file to start chatting with your data, or analyze a file first on the Data Analyzer page.
-                        </AlertDescription>
-                    </Alert>
+                    <FileUpload onFileLoaded={handleFileLoaded} />
                 </motion.div>
             )}
           </AnimatePresence>
