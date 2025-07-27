@@ -34,16 +34,16 @@ const itemVariants = {
 
 const features = [
   {
-    icon: <BarChart className="h-8 w-8 text-primary" />,
-    title: "Data Analyzer",
-    description: "Upload your CSV file and instantly receive key statistics, actionable insights, and beautiful, AI-recommended charts.",
-    href: "/data-analyzer"
-  },
-  {
     icon: <Calculator className="h-8 w-8 text-primary" />,
     title: "Formula Generator",
     description: "Describe any calculation in plain English. Our AI generates the precise, ready-to-use formula for Excel and Google Sheets.",
     href: "/formula"
+  },
+  {
+    icon: <BarChart className="h-8 w-8 text-primary" />,
+    title: "Data Analyzer",
+    description: "Upload your CSV file and instantly receive key statistics, actionable insights, and beautiful, AI-recommended charts.",
+    href: "/data-analyzer"
   },
   {
     icon: <Bot className="h-8 w-8 text-primary" />,
@@ -85,7 +85,7 @@ const testimonials = [
 
 const CTAButton = () => (
     <Button size="lg" className="shadow-lg shadow-primary/20" asChild>
-        <Link href="/data-analyzer">
+        <Link href="/formula">
             Get Started for Free <ArrowRight className="ml-2 h-5 w-5" />
         </Link>
     </Button>

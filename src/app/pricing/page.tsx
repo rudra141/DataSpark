@@ -10,7 +10,7 @@ import { motion } from "framer-motion";
 const plans = [
   {
     name: "Pro Monthly",
-    price: "₹19",
+    price: "$5",
     period: "/ month",
     features: [
         "100 generations per month",
@@ -21,7 +21,7 @@ const plans = [
   },
   {
     name: "Pro Yearly",
-    price: "₹99",
+    price: "$50",
     period: "/ year",
     features: [
         "Unlimited generations",
@@ -112,5 +112,3 @@ export default function PricingPage() {
     </div>
   );
 }
-
-    

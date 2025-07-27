@@ -1,11 +1,10 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ClerkProvider } from '@clerk/nextjs'
 import { dark } from '@clerk/themes';
 import { ThemeProvider } from '@/components/theme-provider';
-import { DataProvider } from '@/context/data-context';
-import { SidebarProvider } from '@/components/ui/sidebar';
 
 export const metadata: Metadata = {
   title: 'DataSpark',
@@ -43,19 +42,13 @@ export default function RootLayout({
             enableSystem={false}
             disableTransitionOnChange
           >
-            <DataProvider>
-              <SidebarProvider>
-                <div className="min-h-screen w-full bg-background text-foreground">
-                {children}
-                <Toaster />
-                </div>
-              </SidebarProvider>
-            </DataProvider>
+            <div className="min-h-screen w-full bg-background text-foreground">
+             {children}
+            </div>
+            <Toaster />
           </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>
   );
 }
-
-    
