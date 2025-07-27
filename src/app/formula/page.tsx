@@ -207,3 +207,5 @@ export default function FormulaPage() {
     </div>
   );
 }
+
+    
