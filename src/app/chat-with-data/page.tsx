@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect, useContext } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, Bot, FileUp, Loader2, Send } from 'lucide-react';
 import { chatWithData, type ChatMessage } from '@/ai/flows/chat-with-data';
@@ -67,7 +67,7 @@ const ChatInterface = ({ csvData, fileName }: { csvData: string; fileName: strin
           Chat with Your Data
         </CardTitle>
         <CardDescription>
-          Ask questions in natural language to get specific insights from <strong>{fileName}</strong>.
+          Ask questions in natural language to get specific insights from strong>{fileName}</strong>.
         </CardDescription>
       </CardHeader>
       <CardContent>
