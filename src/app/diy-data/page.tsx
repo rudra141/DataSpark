@@ -524,14 +524,6 @@ const DIYDataPageContent = () => {
                      <FileUpload onFileLoaded={handleFileLoaded}>
                         {/* No action button needed here as loading the file is the action */}
                     </FileUpload>
-                    <Alert variant="destructive" className="mt-4">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>No Data Loaded</AlertTitle>
-                        <AlertDescription>
-                            Please upload a file to start creating charts, or analyze a file first on the{' '}
-                            <Button variant="link" asChild className="p-0 h-auto"><Link href="/data-analyzer">Data Analyzer</Link></Button> page.
-                        </AlertDescription>
-                    </Alert>
                  </motion.div>
              )}
           </AnimatePresence>
@@ -545,5 +537,3 @@ export default function DIYDataPage() {
       <DIYDataPageContent />
     );
 }
-
-    
