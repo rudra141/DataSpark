@@ -3,7 +3,7 @@
 
 import { useState, useRef, useCallback, useContext, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, Bot, Download, History, Loader2, Sparkles, Star, Trash2, Wand2 } from 'lucide-react';
+import { AlertTriangle, Bot, Download, History, Loader2, Sparkles, Star, Trash2, Wand2, Zap } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line, AreaChart, Area, Treemap } from 'recharts';
 import { toPng } from 'html-to-image';
 import { useUser } from '@clerk/nextjs';
@@ -18,7 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarGroup, SidebarGroupAction, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuAction } from '@/components/ui/sidebar';
 import { Textarea } from '@/components/ui/textarea';
-import { DataContext } from '@/context/data-context';
+import { DataContext, FREE_GENERATIONS_LIMIT } from '@/context/data-context';
 import { FileUpload } from '@/components/file-upload';
 import Link from 'next/link';
 
@@ -35,6 +35,24 @@ type FileHistoryItem = {
 };
 
 const PIE_CHART_COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#AF19FF", "#FF4560", "#775DD0"];
+
+const UpgradeCard = () => (
+    <Card className="text-center bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg shadow-primary/10">
+      <CardHeader>
+        <CardTitle className="text-2xl font-headline">You've Used Your Free Generations!</CardTitle>
+        <CardDescription>
+          Upgrade to a Pro plan to continue creating custom charts.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button size="lg" asChild>
+          <Link href="/pricing">
+            <Zap className="mr-2 h-5 w-5" /> Upgrade to Pro
+          </Link>
+        </Button>
+      </CardContent>
+    </Card>
+);
 
 const BarChartRenderer = ({ vis }: { vis: VisualizationResult }) => (
     <ResponsiveContainer width="100%" height={350}>
@@ -192,6 +210,9 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
   const { user } = useUser();
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isHistoryReady, setIsHistoryReady] = useState(false);
+  const { generationCount, setGenerationCount } = useContext(DataContext);
+  
+  const hasReachedLimit = generationCount !== null && generationCount >= FREE_GENERATIONS_LIMIT;
   
   // Load history from localStorage
   useEffect(() => {
@@ -256,7 +277,7 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
   };
 
   const handleEnhanceRequest = async () => {
-    if (!request.trim()) return;
+    if (!request.trim() || hasReachedLimit) return;
 
     setIsEnhancing(true);
     setError(null);
@@ -264,6 +285,7 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
         const columnNames = getColumnNames();
         const { enhancedRequest } = await enhanceChartRequest({ request, columnNames });
         setRequest(enhancedRequest);
+        setGenerationCount(prev => (prev !== null ? prev + 1 : 1));
     } catch (err) {
         console.error(err);
         setError("Could not enhance the request. Please try rephrasing.");
@@ -278,6 +300,8 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
       setError("Please enter a description for the chart you want to create.");
       return;
     }
+    if (hasReachedLimit) return;
+
 
     setIsLoading(true);
     setError(null);
@@ -288,6 +312,7 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
       if (output) {
         setChart(output);
         addToHistory(request);
+        setGenerationCount(prev => (prev !== null ? prev + 1 : 1));
       } else {
         setError("Sorry, I couldn't generate a chart from that request. Please try rephrasing it, or check if the data supports it.");
       }
@@ -356,54 +381,64 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
     </AppSidebar>
 
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Wand2 className="h-6 w-6" />
-            Create a Custom Visualization
-          </CardTitle>
-          <CardDescription>
-            File loaded: <strong>{fileName}</strong>. Describe the chart you want to create, or use the Enhance button to let AI refine your idea.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Textarea
-              placeholder="e.g., 'Show me an area chart of sales over time' or 'a treemap of market cap by company'"
-              value={request}
-              onChange={(e) => setRequest(e.target.value)}
-              className="min-h-[100px]"
-              disabled={isLoading || isEnhancing}
-            />
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="ghost" onClick={handleEnhanceRequest} disabled={!request.trim() || isLoading || isEnhancing}>
-                  {isEnhancing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enhancing...
-                  </>
-                ) : (
-                  <>
-                    <Bot className="mr-2 h-4 w-4" /> Enhance
-                  </>
-                )}
-              </Button>
-              <Button type="submit" disabled={!request.trim() || isLoading || isEnhancing}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" /> Generate Chart
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+      <AnimatePresence mode="wait">
+      {hasReachedLimit ? (
+        <motion.div key="upgrade-card">
+            <UpgradeCard />
+        </motion.div>
+      ) : (
+        <motion.div key="form-card">
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                <Wand2 className="h-6 w-6" />
+                Create a Custom Visualization
+                </CardTitle>
+                <CardDescription>
+                File loaded: <strong>{fileName}</strong>. Describe the chart you want to create, or use the Enhance button to let AI refine your idea.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                <Textarea
+                    placeholder="e.g., 'Show me an area chart of sales over time' or 'a treemap of market cap by company'"
+                    value={request}
+                    onChange={(e) => setRequest(e.target.value)}
+                    className="min-h-[100px]"
+                    disabled={isLoading || isEnhancing || hasReachedLimit}
+                />
+                <div className="flex justify-end gap-2">
+                    <Button type="button" variant="ghost" onClick={handleEnhanceRequest} disabled={!request.trim() || isLoading || isEnhancing || hasReachedLimit}>
+                        {isEnhancing ? (
+                        <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Enhancing...
+                        </>
+                        ) : (
+                        <>
+                            <Bot className="mr-2 h-4 w-4" /> Enhance
+                        </>
+                        )}
+                    </Button>
+                    <Button type="submit" disabled={!request.trim() || isLoading || isEnhancing || hasReachedLimit}>
+                    {isLoading ? (
+                        <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                        </>
+                    ) : (
+                        <>
+                        <Sparkles className="mr-2 h-4 w-4" /> Generate Chart
+                        </>
+                    )}
+                    </Button>
+                </div>
+                </form>
+            </CardContent>
+        </Card>
+        </motion.div>
+        )}
+      </AnimatePresence>
       
       <AnimatePresence>
         {error && (
@@ -443,7 +478,7 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
 };
 
 const DIYDataPageContent = () => {
-    const { csvData, fileName, setCsvData, setFileName, setFileHistory } = useContext(DataContext);
+    const { csvData, fileName, setCsvData, setFileName, setFileHistory, isContextReady } = useContext(DataContext);
     const { user } = useUser();
   
     const handleFileLoaded = (data: string, name: string) => {
@@ -471,7 +506,16 @@ const DIYDataPageContent = () => {
           </header>
   
           <AnimatePresence mode="wait">
-             {csvData && fileName ? (
+            {!isContextReady ? (
+                <motion.div key="loading">
+                  <Card>
+                    <CardHeader>
+                      <Skeleton className="h-8 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </CardHeader>
+                  </Card>
+                </motion.div>
+            ) : csvData && fileName ? (
                 <motion.div key="diy-interface" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                     <DIYInterface csvData={csvData} fileName={fileName} />
                 </motion.div>

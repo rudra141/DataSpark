@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect, useContext, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, Bot, FileClock, Loader2, Send, Sparkles, Trash2 } from 'lucide-react';
+import { AlertTriangle, Bot, FileClock, Loader2, Send, Sparkles, Trash2, Zap } from 'lucide-react';
 import { chatWithData, type ChatMessage } from '@/ai/flows/chat-with-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { DataContext } from '@/context/data-context';
+import { DataContext, FREE_GENERATIONS_LIMIT } from '@/context/data-context';
 import { FileUpload } from '@/components/file-upload';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
@@ -32,6 +32,10 @@ const ChatInterface = ({ csvData, fileName }: { csvData: string; fileName: strin
   const [isChatting, setIsChatting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
+  const { generationCount, setGenerationCount } = useContext(DataContext);
+  
+  const hasReachedLimit = generationCount !== null && generationCount >= FREE_GENERATIONS_LIMIT;
+
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -53,6 +57,7 @@ const ChatInterface = ({ csvData, fileName }: { csvData: string; fileName: strin
 
   const handleChatSubmit = async (e: React.FormEvent | null, initialQuestion?: string) => {
     e?.preventDefault();
+    if (hasReachedLimit) return;
     const currentQuestion = initialQuestion || question;
     if (!currentQuestion.trim()) return;
 
@@ -72,6 +77,7 @@ const ChatInterface = ({ csvData, fileName }: { csvData: string; fileName: strin
       });
       const modelMessage: ChatMessage = { role: 'model', content: chatResult.answer };
       setMessages((prev) => [...prev, modelMessage]);
+      setGenerationCount(prev => (prev !== null ? prev + 1 : 1));
     } catch (err) {
       console.error(err);
       const errorMessage: ChatMessage = { role: 'model', content: "Sorry, I encountered an error. Please try again." };
@@ -131,9 +137,9 @@ const ChatInterface = ({ csvData, fileName }: { csvData: string; fileName: strin
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             placeholder="e.g., What is the average value for the 'sales' column?"
-            disabled={isChatting}
+            disabled={isChatting || !question.trim() || hasReachedLimit}
           />
-          <Button type="submit" disabled={isChatting || !question.trim()}>
+          <Button type="submit" disabled={isChatting || !question.trim() || hasReachedLimit}>
             {isChatting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             <span className="sr-only">Send</span>
           </Button>
@@ -143,17 +149,37 @@ const ChatInterface = ({ csvData, fileName }: { csvData: string; fileName: strin
   );
 };
 
+const UpgradeCard = () => (
+    <Card className="text-center bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg shadow-primary/10">
+      <CardHeader>
+        <CardTitle className="text-2xl font-headline">You've Used Your Free Generations!</CardTitle>
+        <CardDescription>
+          Upgrade to a Pro plan to continue analyzing and chatting with your data.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button size="lg" asChild>
+          <Link href="/pricing">
+            <Zap className="mr-2 h-5 w-5" /> Upgrade to Pro
+          </Link>
+        </Button>
+      </CardContent>
+    </Card>
+);
+
 const ChatWithDataPageContent = () => {
-  const { csvData, fileName, setCsvData, setFileName, fileHistory, setFileHistory, isHistoryReady } = useContext(DataContext);
+  const { csvData, fileName, setCsvData, setFileName, fileHistory, setFileHistory, isHistoryReady, generationCount, isContextReady } = useContext(DataContext);
   const { user } = useUser();
   const [error, setError] = useState<string | null>(null);
+  
+  const hasReachedLimit = generationCount !== null && generationCount >= FREE_GENERATIONS_LIMIT;
+
 
   const handleFileLoaded = (data: string, name: string) => {
     setCsvData(data);
     setFileName(name);
     setError(null);
 
-    // Add to history
     if (user?.id) {
         const newHistoryItem: FileHistoryItem = { id: short.generate(), fileName: name, csvData: data };
         setFileHistory(prev => [newHistoryItem, ...prev.filter(item => item.fileName !== name)]);
@@ -225,7 +251,20 @@ const ChatWithDataPageContent = () => {
           </header>
 
           <AnimatePresence mode="wait">
-            {csvData && fileName ? (
+            {!isContextReady ? (
+                <motion.div key="loading">
+                  <Card>
+                    <CardHeader>
+                      <Skeleton className="h-8 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </CardHeader>
+                  </Card>
+                </motion.div>
+            ) : hasReachedLimit ? (
+                <motion.div key="limit-reached">
+                    <UpgradeCard />
+                </motion.div>
+            ) : csvData && fileName ? (
                 <motion.div key="chat-interface" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                     <ChatInterface csvData={csvData} fileName={fileName} />
                 </motion.div>

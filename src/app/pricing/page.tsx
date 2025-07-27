@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -11,14 +12,23 @@ const plans = [
     name: "Pro Monthly",
     price: "₹19",
     period: "/ month",
-    features: ["100 generations per month", "Standard support"],
+    features: [
+        "100 generations per month",
+        "Access to all features",
+        "Standard support"
+    ],
     cta: "Choose Monthly",
   },
   {
     name: "Pro Yearly",
     price: "₹99",
     period: "/ year",
-    features: ["Unlimited generations", "Priority support", "Early access to new features"],
+    features: [
+        "Unlimited generations",
+        "Access to all features",
+        "Priority support",
+        "Early access to new features"
+    ],
     cta: "Choose Yearly",
     isPopular: true,
   },
@@ -45,7 +55,7 @@ export default function PricingPage() {
             Choose Your Plan
           </h1>
           <p className="mt-4 max-w-2xl mx-auto text-xl text-muted-foreground">
-            Unlock the full power of FormulaFlow and supercharge your productivity.
+            Unlock the full power of DataSpark and supercharge your productivity. One plan for all features.
           </p>
         </motion.section>
 
@@ -102,3 +112,5 @@ export default function PricingPage() {
     </div>
   );
 }
+
+    

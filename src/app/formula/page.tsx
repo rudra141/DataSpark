@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useContext } from "react";
 import { generateFormula, type GenerateFormulaOutput } from "@/ai/flows/generate-formula";
 import { enhancePrompt } from "@/ai/flows/enhance-prompt";
 import { Button } from "@/components/ui/button";
@@ -26,14 +26,13 @@ import short from "short-uuid";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { AppSidebar } from "@/components/app-sidebar";
+import { DataContext, FREE_GENERATIONS_LIMIT } from "@/context/data-context";
 
 type HistoryItem = {
   id: string;
   query: string;
   isFavorite?: boolean;
 };
-
-const FREE_GENERATIONS_LIMIT = 100;
 
 export default function FormulaPage() {
   const [description, setDescription] = useState("");
@@ -42,46 +41,31 @@ export default function FormulaPage() {
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [generationCount, setGenerationCount] = useState<number | null>(null);
+  
+  const { user } = useUser();
+  const { generationCount, setGenerationCount, isContextReady } = useContext(DataContext);
+  const [isHistoryReady, setIsHistoryReady] = useState(false);
 
-  const { user, isLoaded: isUserLoaded } = useUser();
-  const [isReady, setIsReady] = useState(false);
 
-  // Load and save data from/to localStorage
+  // Load and save history data from/to localStorage
   useEffect(() => {
-    if (!isUserLoaded) return;
-    
-    // This effect runs once when the user is loaded.
-    // It wraps all localStorage access in a single check.
     if (user) {
       try {
         const storedHistory = localStorage.getItem(`formulaHistory_${user.id}`);
         setHistory(storedHistory ? JSON.parse(storedHistory) : []);
-        
-        const storedCount = localStorage.getItem(`generationCount_${user.id}`);
-        setGenerationCount(storedCount ? parseInt(storedCount, 10) : 0);
       } catch (e) {
         console.error("Failed to parse data from localStorage", e);
         setHistory([]);
-        setGenerationCount(0);
       }
-    } else {
-      // Handle logged out state
-      setHistory([]);
-      setGenerationCount(0);
     }
-    setIsReady(true);
-  }, [isUserLoaded, user]);
+    setIsHistoryReady(true);
+  }, [user]);
 
   useEffect(() => {
-    // This effect handles SAVING data to localStorage whenever it changes.
-    if (user?.id && isReady) {
+    if (user?.id && isHistoryReady) {
         localStorage.setItem(`formulaHistory_${user.id}`, JSON.stringify(history));
-        if (generationCount !== null) {
-          localStorage.setItem(`generationCount_${user.id}`, generationCount.toString());
-        }
     }
-  }, [history, generationCount, user?.id, isReady]);
+  }, [history, user?.id, isHistoryReady]);
 
 
   const hasReachedLimit = useMemo(() => {
@@ -130,6 +114,7 @@ export default function FormulaPage() {
     try {
       const { enhancedDescription } = await enhancePrompt({ description });
       setDescription(enhancedDescription);
+      setGenerationCount(prev => (prev !== null ? prev + 1 : 1));
     } catch (err) {
       setError("An error occurred while enhancing the prompt.");
       console.error(err);
@@ -183,7 +168,7 @@ export default function FormulaPage() {
               <History />
               History
             </SidebarGroupLabel>
-            {isReady && history.length > 0 && (
+            {isHistoryReady && history.length > 0 && (
               <SidebarGroupAction asChild>
                 <button onClick={clearHistory} title="Clear history">
                   <Trash2 />
@@ -191,7 +176,7 @@ export default function FormulaPage() {
               </SidebarGroupAction>
             )}
             <SidebarMenu>
-              {!isReady ? (
+              {!isHistoryReady ? (
                 <div className="space-y-2 px-2">
                   <Skeleton className="h-7 w-full" />
                   <Skeleton className="h-7 w-full" />
@@ -245,7 +230,7 @@ export default function FormulaPage() {
             <div className="w-full max-w-4xl space-y-8">
                <div className="flex items-center justify-between">
                   <h1 className="text-2xl font-bold">Formula Generator</h1>
-                   {isReady ? (
+                   {isContextReady ? (
                     <div className="text-sm text-muted-foreground">
                       {Math.max(0, FREE_GENERATIONS_LIMIT - (generationCount || 0))} / {FREE_GENERATIONS_LIMIT} free generations remaining.
                     </div>
@@ -255,7 +240,7 @@ export default function FormulaPage() {
                 </div>
                 
                 <AnimatePresence mode="wait">
-                {!isReady ? (
+                {!isContextReady ? (
                   <Card>
                     <CardHeader>
                       <Skeleton className="h-8 w-3/4" />
@@ -300,6 +285,7 @@ export default function FormulaPage() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0, y: -20 }}
                   >
+                    <form onSubmit={handleSubmit}>
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-2xl">Describe Your Calculation</CardTitle>
@@ -323,7 +309,7 @@ export default function FormulaPage() {
                                   exit={{ opacity: 0, y: 10 }}
                                   className="absolute bottom-5 right-5"
                                 >
-                                  <Button type="button" size="sm" variant="ghost" onClick={handleEnhancePrompt} disabled={isEnhancing}>
+                                  <Button type="button" size="sm" variant="ghost" onClick={handleEnhancePrompt} disabled={isEnhancing || isLoading}>
                                     {isEnhancing ? (
                                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     ) : (
@@ -338,7 +324,6 @@ export default function FormulaPage() {
                         <CardFooter>
                           <Button
                             type="submit"
-                            onClick={handleSubmit}
                             disabled={isLoading || isEnhancing}
                             className="w-full sm:w-auto ml-auto"
                           >
@@ -355,6 +340,7 @@ export default function FormulaPage() {
                             </Button>
                         </CardFooter>
                     </Card>
+                    </form>
                   </motion.div>
                 )}
                 </AnimatePresence>

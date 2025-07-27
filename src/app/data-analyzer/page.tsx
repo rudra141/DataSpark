@@ -4,7 +4,7 @@
 import { useState, useRef, useCallback, useContext } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, BarChart as BarChartIcon, Bot, Download, FileClock, Link as LinkIcon, Loader2, Sparkles, Table, Trash2, Users } from 'lucide-react';
+import { AlertTriangle, BarChart as BarChartIcon, Bot, Download, FileClock, Link as LinkIcon, Loader2, Sparkles, Table, Trash2, Users, Zap } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line, AreaChart, Area, Treemap } from 'recharts';
 import { toPng } from 'html-to-image';
 
@@ -15,11 +15,12 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Table as UiTable, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DataContext } from '@/context/data-context';
+import { DataContext, FREE_GENERATIONS_LIMIT } from '@/context/data-context';
 import { FileUpload } from '@/components/file-upload';
 import { useUser } from '@clerk/nextjs';
 import short from 'short-uuid';
 import { SidebarGroup, SidebarGroupAction, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import Link from 'next/link';
 
 type AnalysisResult = AnalyzeDataOutput;
 type RecommendedVisualization = AnalysisResult['recommendedVisualizations'][0];
@@ -30,6 +31,24 @@ type FileHistoryItem = {
 };
 
 const PIE_CHART_COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#AF19FF", "#FF4560", "#775DD0"];
+
+const UpgradeCard = () => (
+    <Card className="text-center bg-card/80 backdrop-blur-sm border-primary/20 shadow-lg shadow-primary/10">
+      <CardHeader>
+        <CardTitle className="text-2xl font-headline">You've Used Your Free Generations!</CardTitle>
+        <CardDescription>
+          Upgrade to a Pro plan to continue analyzing and visualizing your data.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button size="lg" asChild>
+          <Link href="/pricing">
+            <Zap className="mr-2 h-5 w-5" /> Upgrade to Pro
+          </Link>
+        </Button>
+      </CardContent>
+    </Card>
+);
 
 const ResultSkeleton = () => (
   <div className="space-y-6">
@@ -247,11 +266,13 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
 };
 
 const DataAnalyzerPageContent = () => {
-  const { csvData, fileName, setCsvData, setFileName, fileHistory, setFileHistory, isHistoryReady } = useContext(DataContext);
+  const { csvData, fileName, setCsvData, setFileName, fileHistory, setFileHistory, isHistoryReady, generationCount, setGenerationCount, isContextReady } = useContext(DataContext);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useUser();
+
+  const hasReachedLimit = generationCount !== null && generationCount >= FREE_GENERATIONS_LIMIT;
 
   const handleFileLoaded = (data: string, name: string) => {
     setCsvData(data);
@@ -273,8 +294,8 @@ const DataAnalyzerPageContent = () => {
   };
 
   const handleAnalyze = async () => {
-    if (!csvData || !fileName) {
-      setError("No data available to analyze. Please upload a file.");
+    if (!csvData || !fileName || hasReachedLimit) {
+      if (!csvData || !fileName) setError("No data available to analyze. Please upload a file.");
       return;
     }
 
@@ -285,6 +306,7 @@ const DataAnalyzerPageContent = () => {
     try {
       const output = await analyzeData({ csvData, fileName });
       setResult(output);
+      setGenerationCount(prev => (prev !== null ? prev + 1 : 1));
     } catch (err: any) {
       setError("An error occurred during analysis. The file might be corrupted or in an unsupported format. Please try again.");
       console.error(err);
@@ -352,20 +374,39 @@ const DataAnalyzerPageContent = () => {
             </p>
           </header>
 
-          <FileUpload onFileLoaded={handleFileLoaded}>
-              <Button onClick={handleAnalyze} disabled={!csvData || isLoading}>
-              {isLoading ? (
-                  <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analyzing...
-                  </>
-              ) : (
-                  <>
-                  <Sparkles className="mr-2 h-4 w-4" /> Analyze Data
-                  </>
-              )}
-              </Button>
-          </FileUpload>
+          <AnimatePresence mode="wait">
+            {!isContextReady ? (
+                <motion.div key="loading">
+                  <Card>
+                    <CardHeader>
+                      <Skeleton className="h-8 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </CardHeader>
+                  </Card>
+                </motion.div>
+            ) : hasReachedLimit ? (
+                <motion.div key="limit-reached">
+                    <UpgradeCard />
+                </motion.div>
+            ) : (
+                <motion.div key="uploader">
+                    <FileUpload onFileLoaded={handleFileLoaded}>
+                        <Button onClick={handleAnalyze} disabled={!csvData || isLoading || hasReachedLimit}>
+                        {isLoading ? (
+                            <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Analyzing...
+                            </>
+                        ) : (
+                            <>
+                            <Sparkles className="mr-2 h-4 w-4" /> Analyze Data
+                            </>
+                        )}
+                        </Button>
+                    </FileUpload>
+                </motion.div>
+            )}
+          </AnimatePresence>
 
           <AnimatePresence>
             {error && (
