@@ -69,9 +69,9 @@ export default function FormulaPage() {
   );
 
   return (
-    <div className="flex h-screen">
+    <div className="flex min-h-screen w-full">
       <AppSidebar />
-      <main className="flex-1 overflow-y-auto p-4 sm:p-8">
+      <main className="flex-1 p-4 sm:p-8 overflow-y-auto">
         <div className="mx-auto max-w-4xl w-full space-y-8">
           <h1 className="text-2xl font-bold">Formula Generator</h1>
             
