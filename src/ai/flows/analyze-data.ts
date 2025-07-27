@@ -37,7 +37,7 @@ const ChartDataItemSchema = z.object({
 
 
 const RecommendedVisualizationSchema = z.object({
-    chartType: z.enum(['bar', 'pie', 'scatter', 'line']).describe('The type of chart recommended.'),
+    chartType: z.enum(['bar', 'pie', 'scatter', 'line', 'histogram', 'area', 'treemap']).describe('The type of chart recommended.'),
     title: z.string().describe('A descriptive title for the chart.'),
     caption: z.string().describe('A brief caption explaining the insight from the chart.'),
     data: z.array(ChartDataItemSchema).describe('The data structured for the chart. For scatter plots, should contain x and y keys. For others, typically name and value keys.'),
@@ -47,11 +47,27 @@ const RecommendedVisualizationSchema = z.object({
     }).describe('Configuration for rendering the chart.'),
 });
 
+const CorrelationValueSchema = z.object({
+    column: z.string(),
+    value: z.number(),
+});
+
+const CorrelationRowSchema = z.object({
+    column: z.string(),
+    values: z.array(CorrelationValueSchema),
+});
+
+const SegmentationSchema = z.object({
+    name: z.string().describe("The name of the segment (e.g., 'High-Value Customers')."),
+    description: z.string().describe("A brief description of the segment's characteristics."),
+});
+
 const AnalyzeDataOutputSchema = z.object({
   fileName: z.string().describe('The name of the analyzed file.'),
   rowCount: z.number().describe('The total number of rows in the dataset.'),
   columnCount: z.number().describe('The total number of columns in the dataset.'),
   columnNames: z.array(z.string()).describe('An array of all column names.'),
+  executiveSummary: z.string().optional().describe("A concise, AI-generated summary of the most critical insights from the dataset. This should only be generated if significant insights are found."),
   summaryStats: z.object({
     title: z.string(),
     stats: z.array(ColumnStatSchema),
@@ -64,7 +80,15 @@ const AnalyzeDataOutputSchema = z.object({
     title: z.string(),
     stats: z.array(ColumnStatSchema),
   }).describe('The inferred data type for each column (e.g., Numeric, Categorical, Text).'),
-  recommendedVisualizations: z.array(RecommendedVisualizationSchema).describe('An array of up to 4 AI-recommended visualizations based on the data analysis.'),
+  correlationAnalysis: z.object({
+      interpretation: z.string().describe("A plain-English interpretation of the most significant correlations."),
+      matrix: z.array(CorrelationRowSchema).describe("The correlation matrix."),
+  }).optional().describe("Correlation analysis between numeric columns. This should only be generated if there are at least two numeric columns."),
+  segmentationAnalysis: z.object({
+      summary: z.string().describe("A summary of the segmentation analysis."),
+      segments: z.array(SegmentationSchema).describe("The identified segments."),
+  }).optional().describe("Segmentation analysis to identify clusters in the data. This should only be generated for suitable datasets (e.g., user or customer data)."),
+  recommendedVisualizations: z.array(RecommendedVisualizationSchema).describe('An array of all relevant and insightful visualizations based on the data analysis.'),
 });
 export type AnalyzeDataOutput = z.infer<typeof AnalyzeDataOutputSchema>;
 
@@ -84,11 +108,14 @@ Your task is to perform a comprehensive analysis and generate a single JSON obje
 
 **JSON Output Structure:**
 1.  **Basic Info**: fileName, columnCount, columnNames.
-2.  **Key Statistics**: General descriptive statistics for key columns.
-3.  **Missing Values**: Columns with the most missing values and their counts.
-4.  **Column Types**: The inferred data type for each column (e.g., Numeric, Categorical, Text).
-5.  **Recommended Visualizations**: Generate up to 4 relevant and insightful visualizations based on the data. For each visualization, you **MUST** provide a \`title\`, \`caption\`, \`chartType\`, \`data\`, and \`config\`.
-    -   Choose the best \`chartType\`: 'bar', 'pie', 'scatter', or 'line'.
+2.  **Executive Summary (Optional)**: If the data is rich enough, provide a concise, natural-language paragraph summarizing the most critical insights. If not, omit this field.
+3.  **Key Statistics**: General descriptive statistics for key columns.
+4.  **Missing Values**: Columns with the most missing values and their counts.
+5.  **Column Types**: The inferred data type for each column (e.g., Numeric, Categorical, Text).
+6.  **Correlation Analysis (Optional)**: If there are at least two numeric columns, calculate a correlation matrix and provide a plain-English interpretation of significant findings. Omit this section if not applicable.
+7.  **Segmentation Analysis (Optional)**: If the data seems to describe users or customers, attempt to identify 2-4 distinct segments. Provide a summary and describe each segment. Omit this section if not applicable.
+8.  **Recommended Visualizations**: Generate ALL relevant and insightful visualizations based on the data. The number of charts should depend on the data's richness. For each visualization, you **MUST** provide a \`title\`, \`caption\`, \`chartType\`, \`data\`, and \`config\`.
+    -   Choose the best \`chartType\`: 'bar', 'pie', 'scatter', 'line', 'histogram', 'area', or 'treemap'.
     -   Provide a clear \`title\` and \`caption\`.
     -   Generate the \`data\` array needed to render the chart.
 
