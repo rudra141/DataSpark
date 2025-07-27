@@ -409,8 +409,8 @@ export default function DIYDataPage() {
     return (
         <>
             <AppSidebar />
-            <main className="container mx-auto p-4 sm:p-8 flex flex-col items-center">
-                <div className="w-full max-w-4xl space-y-8">
+            <main className="container mx-auto max-w-4xl p-4 sm:p-8">
+                <div className="w-full space-y-8">
                 <header>
                     <h1 className="text-3xl font-bold flex items-center gap-3">
                     <Wand2 className="h-8 w-8 text-primary" />

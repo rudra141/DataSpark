@@ -1,36 +1,19 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState } from "react";
 import { generateFormula, type GenerateFormulaOutput } from "@/ai/flows/generate-formula";
 import { enhancePrompt } from "@/ai/flows/enhance-prompt";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles, Bot, History, Trash2, Star, AlertTriangle } from "lucide-react";
+import { Loader2, Sparkles, Bot, AlertTriangle } from "lucide-react";
 import { CopyButton } from "@/components/copy-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AnimatePresence, motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
-import {
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuAction,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarGroupAction,
-} from "@/components/ui/sidebar";
-import short from "short-uuid";
-import { useUser } from "@clerk/nextjs";
 import { AppSidebar } from "@/components/app-sidebar";
-
-type HistoryItem = {
-  id: string;
-  query: string;
-  isFavorite?: boolean;
-};
 
 export default function FormulaPage() {
   const [description, setDescription] = useState("");
@@ -38,63 +21,6 @@ export default function FormulaPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [history, setHistory] = useState<HistoryItem[]>([]);
-  const { user } = useUser();
-  const [isHistoryReady, setIsHistoryReady] = useState(false);
-
-
-  // Load and save history data from/to localStorage
-  useEffect(() => {
-    if (user) {
-      try {
-        const storedHistory = localStorage.getItem(`formulaHistory_${user.id}`);
-        setHistory(storedHistory ? JSON.parse(storedHistory) : []);
-      } catch (e) {
-        console.error("Failed to parse data from localStorage", e);
-        setHistory([]);
-      }
-    }
-    setIsHistoryReady(true);
-  }, [user]);
-
-  useEffect(() => {
-    if (user?.id && isHistoryReady) {
-        localStorage.setItem(`formulaHistory_${user.id}`, JSON.stringify(history));
-    }
-  }, [history, user?.id, isHistoryReady]);
-
-  const sortedHistory = useMemo(() => {
-    return [...history].sort((a, b) => {
-      if (a.isFavorite && !b.isFavorite) return -1;
-      if (!a.isFavorite && b.isFavorite) return 1;
-      return 0;
-    });
-  }, [history]);
-
-  const addToHistory = (query: string) => {
-    if (!query.trim()) return;
-    const newHistoryItem = { id: short.generate(), query, isFavorite: false };
-    setHistory(prev => [newHistoryItem, ...prev.filter(item => item.query !== query)]);
-  };
-
-  const removeFromHistory = (id: string) => {
-    setHistory(prev => prev.filter(item => item.id !== id));
-  };
-  
-  const toggleFavorite = (id: string) => {
-    setHistory(prev => 
-      prev.map(item => 
-        item.id === id ? { ...item, isFavorite: !item.isFavorite } : item
-      )
-    );
-  };
-
-  const clearHistory = () => {
-    setHistory([]);
-    if (user?.id) {
-      localStorage.removeItem(`formulaHistory_${user.id}`);
-    }
-  };
 
   const handleEnhancePrompt = async () => {
     if (!description) return;
@@ -126,7 +52,6 @@ export default function FormulaPage() {
     try {
       const output = await generateFormula({ description });
       setResult(output);
-      addToHistory(description);
     } catch (err: any) {
       setError("An error occurred while generating the formula. Please try again later.");
       console.error(err);
@@ -145,72 +70,9 @@ export default function FormulaPage() {
 
   return (
     <>
-      <AppSidebar>
-         <SidebarGroup>
-            <SidebarGroupLabel className="flex items-center gap-2">
-              <History />
-              History
-            </SidebarGroupLabel>
-            {isHistoryReady && history.length > 0 && (
-              <SidebarGroupAction asChild>
-                <button onClick={clearHistory} title="Clear history">
-                  <Trash2 />
-                </button>
-              </SidebarGroupAction>
-            )}
-            <SidebarMenu>
-              {!isHistoryReady ? (
-                <div className="space-y-2 px-2">
-                  <Skeleton className="h-7 w-full" />
-                  <Skeleton className="h-7 w-full" />
-                  <Skeleton className="h-7 w-full" />
-                </div>
-              ) : sortedHistory.length > 0 ? (
-                sortedHistory.map((item) => (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton
-                      className="h-auto py-1 pr-12"
-                      onClick={() => setDescription(item.query)}
-                      tooltip={{
-                        children: item.query,
-                        side: "right",
-                        align: "center",
-                      }}
-                    >
-                      <span className="truncate">{item.query}</span>
-                    </SidebarMenuButton>
-                     <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
-                      <SidebarMenuAction
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleFavorite(item.id);
-                        }}
-                        showOnHover
-                        title={item.isFavorite ? "Remove from favorites" : "Add to favorites"}
-                      >
-                        <Star className={item.isFavorite ? "text-yellow-400 fill-yellow-400" : ""} />
-                      </SidebarMenuAction>
-                      <SidebarMenuAction
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeFromHistory(item.id);
-                        }}
-                        showOnHover
-                        title="Delete item"
-                      >
-                        <Trash2 />
-                      </SidebarMenuAction>
-                    </div>
-                  </SidebarMenuItem>
-                ))
-              ) : (
-                <p className="px-2 text-xs text-muted-foreground">No history yet.</p>
-              )}
-            </SidebarMenu>
-          </SidebarGroup>
-      </AppSidebar>
-         <main className="container mx-auto p-4 sm:p-8 flex flex-col items-center">
-            <div className="w-full max-w-4xl space-y-8">
+      <AppSidebar />
+         <main className="container mx-auto max-w-4xl p-4 sm:p-8">
+            <div className="w-full space-y-8">
                <h1 className="text-2xl font-bold">Formula Generator</h1>
                 
                 <form onSubmit={handleSubmit}>
