@@ -3,7 +3,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, BarChart as BarChartIcon, Download, Loader2, Sparkles, Table, BrainCircuit, Users, LineChart as LineChartIcon, FileUp } from 'lucide-react';
+import { AlertTriangle, BarChart as BarChartIcon, Download, Loader2, Sparkles, Table, BrainCircuit, Users, LineChart as LineChartIcon, FileUp, PieChartIcon, AreaChartIcon, ScatterChartIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line, AreaChart, Area, Treemap } from 'recharts';
 import { toPng } from 'html-to-image';
 import * as XLSX from 'xlsx';
@@ -54,10 +54,13 @@ const ResultSkeleton = () => (
   </div>
 );
 
-const InsightCard = ({ title, stats }: { title: string; stats: { columnName: string; value: string | number }[] }) => (
+const InsightCard = ({ title, stats, icon: Icon }: { title: string; stats: { columnName: string; value: string | number }[], icon?: React.ElementType }) => (
   <Card>
     <CardHeader>
-      <CardTitle className="text-lg">{title}</CardTitle>
+      <CardTitle className="text-lg flex items-center gap-2">
+        {Icon && <Icon className="h-5 w-5" />}
+        {title}
+      </CardTitle>
     </CardHeader>
     <CardContent>
       <ul className="space-y-2 text-sm">
@@ -71,6 +74,7 @@ const InsightCard = ({ title, stats }: { title: string; stats: { columnName: str
     </CardContent>
   </Card>
 );
+
 
 const BarChartRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
     <ResponsiveContainer width="100%" height={300}>
@@ -342,10 +346,10 @@ export default function DataAnalyzerPage() {
   };
 
   return (
-    <>
+    <div className="flex h-screen">
       <AppSidebar />
-      <main className="container mx-auto max-w-6xl p-4 sm:p-8">
-        <div className="w-full space-y-8">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-8">
+        <div className="mx-auto max-w-6xl w-full space-y-8">
           <header>
             <h1 className="text-3xl font-bold flex items-center gap-3">
               <BarChartIcon className="h-8 w-8 text-primary" />
@@ -505,6 +509,6 @@ export default function DataAnalyzerPage() {
           </AnimatePresence>
         </div>
       </main>
-    </>
+    </div>
   )
 }

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useContext } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, Bot, FileUp, Loader2, Send } from 'lucide-react';
 import { chatWithData, type ChatMessage } from '@/ai/flows/chat-with-data';
@@ -215,10 +215,10 @@ export default function ChatWithDataPage() {
   };
 
   return (
-    <>
+    <div className="flex h-screen">
       <AppSidebar />
-      <main className="container mx-auto max-w-4xl p-4 sm:p-8">
-        <div className="w-full space-y-8">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-8">
+        <div className="mx-auto max-w-4xl w-full space-y-8">
           <header>
             <h1 className="text-3xl font-bold flex items-center gap-3">
               <Bot className="h-8 w-8 text-primary" />
@@ -242,6 +242,6 @@ export default function ChatWithDataPage() {
           </AnimatePresence>
         </div>
       </main>
-    </>
+    </div>
   );
 }
