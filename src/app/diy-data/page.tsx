@@ -1,11 +1,13 @@
 
 'use client';
 
-import { useState, useRef, useCallback, useContext } from 'react';
+import { useState, useRef, useCallback, useContext, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, Bot, Download, Loader2, Sparkles, Wand2 } from 'lucide-react';
+import { AlertTriangle, Bot, Download, History, Loader2, Sparkles, Star, Trash2, Wand2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line, AreaChart, Area, Treemap } from 'recharts';
 import { toPng } from 'html-to-image';
+import { useUser } from '@clerk/nextjs';
+import short from 'short-uuid';
 
 import { generateChart, type GenerateChartOutput } from '@/ai/flows/generate-chart';
 import { enhanceChartRequest } from '@/ai/flows/enhance-chart-request';
@@ -13,14 +15,24 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
+import { SidebarGroup, SidebarGroupAction, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuAction } from '@/components/ui/sidebar';
 import { Textarea } from '@/components/ui/textarea';
 import { DataContext } from '@/context/data-context';
 import { FileUpload } from '@/components/file-upload';
 import Link from 'next/link';
 
 type VisualizationResult = NonNullable<GenerateChartOutput>;
+type HistoryItem = {
+  id: string;
+  query: string;
+  isFavorite?: boolean;
+};
+type FileHistoryItem = {
+  id: string;
+  fileName: string;
+  csvData: string;
+};
 
 const PIE_CHART_COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#AF19FF", "#FF4560", "#775DD0"];
 
@@ -177,6 +189,64 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chart, setChart] = useState<VisualizationResult | null>(null);
+  const { user } = useUser();
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [isHistoryReady, setIsHistoryReady] = useState(false);
+  
+  // Load history from localStorage
+  useEffect(() => {
+    if (user) {
+      try {
+        const storedHistory = localStorage.getItem(`diyDataHistory_${user.id}`);
+        setHistory(storedHistory ? JSON.parse(storedHistory) : []);
+      } catch (e) {
+        console.error("Failed to parse history from localStorage", e);
+        setHistory([]);
+      }
+    }
+    setIsHistoryReady(true);
+  }, [user]);
+
+  // Save history to localStorage
+  useEffect(() => {
+    if (user?.id && isHistoryReady) {
+      localStorage.setItem(`diyDataHistory_${user.id}`, JSON.stringify(history));
+    }
+  }, [history, user?.id, isHistoryReady]);
+
+  const sortedHistory = useMemo(() => {
+    return [...history].sort((a, b) => {
+      if (a.isFavorite && !b.isFavorite) return -1;
+      if (!a.isFavorite && b.isFavorite) return 1;
+      return 0;
+    });
+  }, [history]);
+
+  const addToHistory = (query: string) => {
+    if (!query.trim()) return;
+    const newHistoryItem = { id: short.generate(), query, isFavorite: false };
+    setHistory(prev => [newHistoryItem, ...prev.filter(item => item.query !== query)]);
+  };
+
+  const removeFromHistory = (id: string) => {
+    setHistory(prev => prev.filter(item => item.id !== id));
+  };
+  
+  const toggleFavorite = (id: string) => {
+    setHistory(prev => 
+      prev.map(item => 
+        item.id === id ? { ...item, isFavorite: !item.isFavorite } : item
+      )
+    );
+  };
+
+  const clearHistory = () => {
+    setHistory([]);
+    if (user?.id) {
+        localStorage.removeItem(`diyDataHistory_${user.id}`);
+    }
+  };
+
 
   const getColumnNames = (): string[] => {
     if (!csvData) return [];
@@ -202,7 +272,6 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
     }
   };
 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!request.trim()) {
@@ -218,6 +287,7 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
       const output = await generateChart({ csvData, request });
       if (output) {
         setChart(output);
+        addToHistory(request);
       } else {
         setError("Sorry, I couldn't generate a chart from that request. Please try rephrasing it, or check if the data supports it.");
       }
@@ -230,6 +300,61 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
   };
 
   return (
+    <>
+    <AppSidebar>
+        <SidebarGroup>
+          <SidebarGroupLabel className="flex items-center gap-2">
+            <History />
+            History
+          </SidebarGroupLabel>
+          {isHistoryReady && history.length > 0 && (
+            <SidebarGroupAction asChild>
+              <button onClick={clearHistory} title="Clear history">
+                <Trash2 />
+              </button>
+            </SidebarGroupAction>
+          )}
+          <SidebarMenu>
+            {!isHistoryReady ? (
+              <div className="space-y-2 px-2">
+                <Skeleton className="h-7 w-full" />
+                <Skeleton className="h-7 w-full" />
+              </div>
+            ) : sortedHistory.length > 0 ? (
+              sortedHistory.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    className="h-auto py-1 pr-12"
+                    onClick={() => setRequest(item.query)}
+                    tooltip={{ children: item.query, side: "right", align: "center" }}
+                  >
+                    <span className="truncate">{item.query}</span>
+                  </SidebarMenuButton>
+                  <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
+                    <SidebarMenuAction
+                      onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id); }}
+                      showOnHover
+                      title={item.isFavorite ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      <Star className={item.isFavorite ? "text-yellow-400 fill-yellow-400" : ""} />
+                    </SidebarMenuAction>
+                    <SidebarMenuAction
+                      onClick={(e) => { e.stopPropagation(); removeFromHistory(item.id); }}
+                      showOnHover
+                      title="Delete item"
+                    >
+                      <Trash2 />
+                    </SidebarMenuAction>
+                  </div>
+                </SidebarMenuItem>
+              ))
+            ) : (
+              <p className="px-2 text-xs text-muted-foreground">No history yet.</p>
+            )}
+          </SidebarMenu>
+        </SidebarGroup>
+    </AppSidebar>
+
     <div className="space-y-6">
       <Card>
         <CardHeader>
@@ -252,7 +377,7 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
             />
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" onClick={handleEnhanceRequest} disabled={!request.trim() || isLoading || isEnhancing}>
-                 {isEnhancing ? (
+                  {isEnhancing ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Enhancing...
@@ -313,16 +438,23 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
         )}
       </AnimatePresence>
     </div>
+    </>
   );
 };
 
-
 const DIYDataPageContent = () => {
-    const { csvData, fileName, setCsvData, setFileName } = useContext(DataContext);
+    const { csvData, fileName, setCsvData, setFileName, setFileHistory } = useContext(DataContext);
+    const { user } = useUser();
   
     const handleFileLoaded = (data: string, name: string) => {
       setCsvData(data);
       setFileName(name);
+      
+      // Also add to the global file history
+      if (user?.id) {
+        const newHistoryItem: FileHistoryItem = { id: short.generate(), fileName: name, csvData: data };
+        setFileHistory(prev => [newHistoryItem, ...prev.filter(item => item.fileName !== name)]);
+      }
     };
   
     return (
@@ -366,9 +498,8 @@ const DIYDataPageContent = () => {
   
 export default function DIYDataPage() {
     return (
-      <SidebarProvider>
-        <AppSidebar />
-        <DIYDataPageContent />
-      </SidebarProvider>
+      <DIYDataPageContent />
     );
 }
+
+    

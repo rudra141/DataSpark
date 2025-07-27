@@ -14,17 +14,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AnimatePresence, motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import {
-  Sidebar,
-  SidebarContent,
   SidebarGroup,
   SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInset,
   SidebarMenu,
   SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarProvider,
   SidebarGroupAction,
 } from "@/components/ui/sidebar";
 import short from "short-uuid";
@@ -50,6 +45,7 @@ export default function FormulaPage() {
   const [generationCount, setGenerationCount] = useState<number | null>(null);
 
   const { user, isLoaded: isUserLoaded } = useUser();
+  const [isReady, setIsReady] = useState(false);
 
   // Load and save data from/to localStorage
   useEffect(() => {
@@ -74,21 +70,18 @@ export default function FormulaPage() {
       setHistory([]);
       setGenerationCount(0);
     }
+    setIsReady(true);
   }, [isUserLoaded, user]);
 
   useEffect(() => {
     // This effect handles SAVING data to localStorage whenever it changes.
-    if (user?.id) {
-      if (history.length > 0) {
+    if (user?.id && isReady) {
         localStorage.setItem(`formulaHistory_${user.id}`, JSON.stringify(history));
-      } else {
-        localStorage.removeItem(`formulaHistory_${user.id}`);
-      }
-      if (generationCount !== null) {
-        localStorage.setItem(`generationCount_${user.id}`, generationCount.toString());
-      }
+        if (generationCount !== null) {
+          localStorage.setItem(`generationCount_${user.id}`, generationCount.toString());
+        }
     }
-  }, [history, generationCount, user?.id]);
+  }, [history, generationCount, user?.id, isReady]);
 
 
   const hasReachedLimit = useMemo(() => {
@@ -182,10 +175,8 @@ export default function FormulaPage() {
     </div>
   );
 
-  const isReady = isUserLoaded && generationCount !== null;
-
   return (
-    <SidebarProvider>
+    <>
       <AppSidebar>
          <SidebarGroup>
             <SidebarGroupLabel className="flex items-center gap-2">
@@ -250,7 +241,6 @@ export default function FormulaPage() {
             </SidebarMenu>
           </SidebarGroup>
       </AppSidebar>
-      <SidebarInset>
          <main className="container mx-auto p-4 sm:p-8 flex flex-col items-center">
             <div className="w-full max-w-4xl space-y-8">
                <div className="flex items-center justify-between">
@@ -442,7 +432,8 @@ export default function FormulaPage() {
                 </AnimatePresence>
             </div>
         </main>
-      </SidebarInset>
-    </SidebarProvider>
+    </>
   );
 }
+
+    

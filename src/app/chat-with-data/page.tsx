@@ -4,18 +4,27 @@
 import { useState, useRef, useEffect, useContext, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, Bot, Loader2, Send, Sparkles } from 'lucide-react';
+import { AlertTriangle, Bot, FileClock, Loader2, Send, Sparkles, Trash2 } from 'lucide-react';
 import { chatWithData, type ChatMessage } from '@/ai/flows/chat-with-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DataContext } from '@/context/data-context';
 import { FileUpload } from '@/components/file-upload';
 import Link from 'next/link';
+import { useUser } from '@clerk/nextjs';
+import short from 'short-uuid';
+import { SidebarGroup, SidebarGroupAction, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import { Skeleton } from '@/components/ui/skeleton';
+
+type FileHistoryItem = {
+  id: string;
+  fileName: string;
+  csvData: string;
+};
 
 const ChatInterface = ({ csvData, fileName }: { csvData: string; fileName: string }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -40,7 +49,7 @@ const ChatInterface = ({ csvData, fileName }: { csvData: string; fileName: strin
     }
     
     setMessages(initialMessages);
-  }, [fileName]); // Only run once when fileName changes
+  }, [fileName, searchParams]);
 
   const handleChatSubmit = async (e: React.FormEvent | null, initialQuestion?: string) => {
     e?.preventDefault();
@@ -135,62 +144,119 @@ const ChatInterface = ({ csvData, fileName }: { csvData: string; fileName: strin
 };
 
 const ChatWithDataPageContent = () => {
-  const { csvData, fileName, setCsvData, setFileName } = useContext(DataContext);
+  const { csvData, fileName, setCsvData, setFileName, fileHistory, setFileHistory, isHistoryReady } = useContext(DataContext);
+  const { user } = useUser();
   const [error, setError] = useState<string | null>(null);
 
   const handleFileLoaded = (data: string, name: string) => {
     setCsvData(data);
     setFileName(name);
     setError(null);
+
+    // Add to history
+    if (user?.id) {
+        const newHistoryItem: FileHistoryItem = { id: short.generate(), fileName: name, csvData: data };
+        setFileHistory(prev => [newHistoryItem, ...prev.filter(item => item.fileName !== name)]);
+    }
+  };
+
+  const handleHistorySelect = (item: FileHistoryItem) => {
+    setCsvData(item.csvData);
+    setFileName(item.fileName);
   };
   
-  return (
-    <main className="container mx-auto p-4 sm:p-8 flex flex-col items-center">
-      <div className="w-full max-w-4xl space-y-8">
-        <header>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Bot className="h-8 w-8 text-primary" />
-            Chat with Data
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Upload a CSV or XLSX file and ask questions to get instant insights.
-          </p>
-        </header>
+  const clearHistory = () => {
+    setFileHistory([]);
+    if (user?.id) {
+        localStorage.removeItem(`fileHistory_${user.id}`);
+    }
+  };
 
-        <AnimatePresence mode="wait">
-           {csvData && fileName ? (
-              <motion.div key="chat-interface" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                  <ChatInterface csvData={csvData} fileName={fileName} />
-              </motion.div>
-           ) : (
-               <motion.div key="upload-form" className="w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                   <FileUpload onFileLoaded={handleFileLoaded}>
-                       {/* No action button needed here as loading the file is the action */}
-                   </FileUpload>
-                   <Alert variant="destructive" className="mt-4">
-                     <AlertTriangle className="h-4 w-4" />
-                     <AlertTitle>No Data Loaded</AlertTitle>
-                     <AlertDescription>
-                       Please upload a file to start chatting, or analyze a file first on the{' '}
-                       <Button variant="link" asChild className="p-0 h-auto"><Link href="/data-analyzer">Data Analyzer</Link></Button> page.
-                     </AlertDescription>
-                   </Alert>
-               </motion.div>
-           )}
-        </AnimatePresence>
-      </div>
-    </main>
+  return (
+    <>
+     <AppSidebar>
+         <SidebarGroup>
+            <SidebarGroupLabel className="flex items-center gap-2">
+              <FileClock />
+              File History
+            </SidebarGroupLabel>
+            {isHistoryReady && fileHistory.length > 0 && (
+              <SidebarGroupAction asChild>
+                <button onClick={clearHistory} title="Clear file history">
+                  <Trash2 />
+                </button>
+              </SidebarGroupAction>
+            )}
+            <SidebarMenu>
+              {!isHistoryReady ? (
+                <div className="space-y-2 px-2">
+                  <Skeleton className="h-7 w-full" />
+                  <Skeleton className="h-7 w-full" />
+                </div>
+              ) : fileHistory.length > 0 ? (
+                fileHistory.map((item) => (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      className="h-auto py-1"
+                      onClick={() => handleHistorySelect(item)}
+                      isActive={fileName === item.fileName}
+                      tooltip={{ children: item.fileName, side: "right", align: "center" }}
+                    >
+                      <span className="truncate">{item.fileName}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))
+              ) : (
+                <p className="px-2 text-xs text-muted-foreground">No files loaded yet.</p>
+              )}
+            </SidebarMenu>
+          </SidebarGroup>
+      </AppSidebar>
+      <main className="container mx-auto p-4 sm:p-8 flex flex-col items-center">
+        <div className="w-full max-w-4xl space-y-8">
+          <header>
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <Bot className="h-8 w-8 text-primary" />
+              Chat with Data
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Upload a CSV or XLSX file and ask questions to get instant insights.
+            </p>
+          </header>
+
+          <AnimatePresence mode="wait">
+            {csvData && fileName ? (
+                <motion.div key="chat-interface" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                    <ChatInterface csvData={csvData} fileName={fileName} />
+                </motion.div>
+            ) : (
+                <motion.div key="upload-form" className="w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <FileUpload onFileLoaded={handleFileLoaded}>
+                        {/* No action button needed here as loading the file is the action */}
+                    </FileUpload>
+                    <Alert variant="destructive" className="mt-4">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>No Data Loaded</AlertTitle>
+                      <AlertDescription>
+                        Please upload a file to start chatting, or analyze a file first on the{' '}
+                        <Button variant="link" asChild className="p-0 h-auto"><Link href="/data-analyzer">Data Analyzer</Link></Button> page.
+                      </AlertDescription>
+                    </Alert>
+                </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </main>
+    </>
   );
 };
-
 
 export default function ChatWithDataPage() {
     return (
         <Suspense fallback={<div>Loading...</div>}>
-            <SidebarProvider>
-                <AppSidebar />
-                <ChatWithDataPageContent />
-            </SidebarProvider>
+            <ChatWithDataPageContent />
         </Suspense>
     )
 }
+
+    

@@ -4,7 +4,7 @@
 import { useState, useRef, useCallback, useContext } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, BarChart as BarChartIcon, Bot, Download, FileUp, Link as LinkIcon, Loader2, Sparkles, Table, Users } from 'lucide-react';
+import { AlertTriangle, BarChart as BarChartIcon, Bot, Download, FileClock, Link as LinkIcon, Loader2, Sparkles, Table, Trash2, Users } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie as RechartsPie, Cell, ScatterChart, Scatter, LineChart, Line, AreaChart, Area, Treemap } from 'recharts';
 import { toPng } from 'html-to-image';
 
@@ -13,15 +13,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Table as UiTable, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DataContext } from '@/context/data-context';
 import { FileUpload } from '@/components/file-upload';
-
+import { useUser } from '@clerk/nextjs';
+import short from 'short-uuid';
+import { SidebarGroup, SidebarGroupAction, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 
 type AnalysisResult = AnalyzeDataOutput;
 type RecommendedVisualization = AnalysisResult['recommendedVisualizations'][0];
+type FileHistoryItem = {
+  id: string;
+  fileName: string;
+  csvData: string;
+};
 
 const PIE_CHART_COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#AF19FF", "#FF4560", "#775DD0"];
 
@@ -241,10 +247,30 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
 };
 
 const DataAnalyzerPageContent = () => {
-  const { csvData, fileName, setCsvData, setFileName } = useContext(DataContext);
+  const { csvData, fileName, setCsvData, setFileName, fileHistory, setFileHistory, isHistoryReady } = useContext(DataContext);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useUser();
+
+  const handleFileLoaded = (data: string, name: string) => {
+    setCsvData(data);
+    setFileName(name);
+    setResult(null);
+    setError(null);
+
+    // Add to history
+    if (user?.id) {
+        const newHistoryItem: FileHistoryItem = { id: short.generate(), fileName: name, csvData: data };
+        setFileHistory(prev => [newHistoryItem, ...prev.filter(item => item.fileName !== name)]);
+    }
+  };
+
+  const handleHistorySelect = (item: FileHistoryItem) => {
+    setCsvData(item.csvData);
+    setFileName(item.fileName);
+    setResult(null); // Clear previous results when a new file is selected from history
+  };
 
   const handleAnalyze = async () => {
     if (!csvData || !fileName) {
@@ -266,181 +292,221 @@ const DataAnalyzerPageContent = () => {
       setIsLoading(false);
     }
   };
+  
+  const clearHistory = () => {
+    setFileHistory([]);
+    if (user?.id) {
+        localStorage.removeItem(`fileHistory_${user.id}`);
+    }
+  };
 
   return (
-    <main className="container mx-auto p-4 sm:p-8 flex flex-col items-center">
-      <div className="w-full max-w-6xl space-y-8">
-        <header>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <BarChartIcon className="h-8 w-8 text-primary" />
-            Data Analyzer
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Upload a CSV or XLSX file to get instant insights, statistics, and AI-recommended visualizations.
-          </p>
-        </header>
-
-        <FileUpload onFileLoaded={(data, name) => {
-          setCsvData(data);
-          setFileName(name);
-          setResult(null);
-          setError(null);
-        }}>
-            <Button onClick={handleAnalyze} disabled={!csvData || isLoading}>
-            {isLoading ? (
-                <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Analyzing...
-                </>
-            ) : (
-                <>
-                <Sparkles className="mr-2 h-4 w-4" /> Analyze Data
-                </>
+    <>
+      <AppSidebar>
+         <SidebarGroup>
+            <SidebarGroupLabel className="flex items-center gap-2">
+              <FileClock />
+              File History
+            </SidebarGroupLabel>
+            {isHistoryReady && fileHistory.length > 0 && (
+              <SidebarGroupAction asChild>
+                <button onClick={clearHistory} title="Clear file history">
+                  <Trash2 />
+                </button>
+              </SidebarGroupAction>
             )}
-            </Button>
-        </FileUpload>
+            <SidebarMenu>
+              {!isHistoryReady ? (
+                <div className="space-y-2 px-2">
+                  <Skeleton className="h-7 w-full" />
+                  <Skeleton className="h-7 w-full" />
+                </div>
+              ) : fileHistory.length > 0 ? (
+                fileHistory.map((item) => (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      className="h-auto py-1"
+                      onClick={() => handleHistorySelect(item)}
+                      isActive={fileName === item.fileName}
+                      tooltip={{ children: item.fileName, side: "right", align: "center" }}
+                    >
+                      <span className="truncate">{item.fileName}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))
+              ) : (
+                <p className="px-2 text-xs text-muted-foreground">No files loaded yet.</p>
+              )}
+            </SidebarMenu>
+          </SidebarGroup>
+      </AppSidebar>
+      <main className="container mx-auto p-4 sm:p-8 flex flex-col items-center">
+        <div className="w-full max-w-6xl space-y-8">
+          <header>
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <BarChartIcon className="h-8 w-8 text-primary" />
+              Data Analyzer
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Upload a CSV or XLSX file to get instant insights, statistics, and AI-recommended visualizations.
+            </p>
+          </header>
 
-        <AnimatePresence>
-          {error && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            </motion.div>
-          )}
-        </AnimatePresence>
+          <FileUpload onFileLoaded={handleFileLoaded}>
+              <Button onClick={handleAnalyze} disabled={!csvData || isLoading}>
+              {isLoading ? (
+                  <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing...
+                  </>
+              ) : (
+                  <>
+                  <Sparkles className="mr-2 h-4 w-4" /> Analyze Data
+                  </>
+              )}
+              </Button>
+          </FileUpload>
 
-        <AnimatePresence mode="wait">
-          {isLoading && <ResultSkeleton key="skeleton" />}
+          <AnimatePresence>
+            {error && (
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {result && !isLoading && (
-            <motion.div
-              key="result"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-6"
-            >
-              <Card>
-                 <CardHeader>
-                    <CardTitle className="text-xl">Analysis for: {result.fileName}</CardTitle>
-                     <CardDescription>
-                        Found {result.rowCount} rows and {result.columnCount} columns.
-                     </CardDescription>
-                 </CardHeader>
-              </Card>
+          <AnimatePresence mode="wait">
+            {isLoading && <ResultSkeleton key="skeleton" />}
 
-              {result.executiveSummary && (
+            {result && !isLoading && (
+              <motion.div
+                key="result"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-6"
+              >
+                <Card>
+                  <CardHeader>
+                      <CardTitle className="text-xl">Analysis for: {result.fileName}</CardTitle>
+                      <CardDescription>
+                          Found {result.rowCount} rows and {result.columnCount} columns.
+                      </CardDescription>
+                  </CardHeader>
+                </Card>
+
+                {result.executiveSummary && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-primary" />
+                        AI Executive Summary
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground leading-relaxed">{result.executiveSummary}</p>
+                    </CardContent>
+                  </Card>
+                )}
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {result.summaryStats && <InsightCard title="Key Statistics" stats={result.summaryStats.stats} emptyText="No summary statistics generated."/>}
+                  {result.missingValues && <InsightCard title={result.missingValues.title} stats={result.missingValues.stats} emptyText="No missing values found." />}
+                  {result.columnTypes && <InsightCard title={result.columnTypes.title} stats={result.columnTypes.stats} />}
+                </div>
+
+                {result.correlationAnalysis && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                          <LinkIcon className="h-5 w-5" />
+                          {result.correlationAnalysis.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {result.correlationAnalysis.correlations.map((corr, index) => (
+                        <div key={index}>
+                          <p className="text-sm font-medium">{corr.variable1} & {corr.variable2}: <span className="font-mono text-primary">{corr.correlation.toFixed(2)}</span></p>
+                          <p className="text-sm text-muted-foreground">{corr.interpretation}</p>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {result.segmentationAnalysis && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                          <Users className="h-5 w-5" />
+                          {result.segmentationAnalysis.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <UiTable>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Segment</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead className="text-right">Count</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {result.segmentationAnalysis.segments.map((seg, index) => (
+                            <TableRow key={index}>
+                              <TableCell className="font-medium">{seg.name}</TableCell>
+                              <TableCell>{seg.description}</TableCell>
+                              <TableCell className="text-right font-mono">{seg.count}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </UiTable>
+                    </CardContent>
+                  </Card>
+                )}
+                
+                {result.recommendedVisualizations.length > 0 && (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {result.recommendedVisualizations.map((vis, index) => (
+                        <DynamicChartRenderer key={index} visualization={vis} />
+                      ))}
+                  </div>
+                )}
+                
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <Sparkles className="h-5 w-5 text-primary" />
-                      AI Executive Summary
+                      <Table className="h-5 w-5" />
+                      Column Overview
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground leading-relaxed">{result.executiveSummary}</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                      {result.columnNames.map(name => (
+                        <div key={name} className="p-2 bg-muted/50 rounded-md text-sm truncate" title={name}>
+                          {name}
+                        </div>
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
-              )}
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {result.summaryStats && <InsightCard title="Key Statistics" stats={result.summaryStats.stats} emptyText="No summary statistics generated."/>}
-                {result.missingValues && <InsightCard title={result.missingValues.title} stats={result.missingValues.stats} emptyText="No missing values found." />}
-                {result.columnTypes && <InsightCard title={result.columnTypes.title} stats={result.columnTypes.stats} />}
-              </div>
 
-              {result.correlationAnalysis && (
-                <Card>
-                  <CardHeader>
-                     <CardTitle className="text-lg flex items-center gap-2">
-                        <LinkIcon className="h-5 w-5" />
-                        {result.correlationAnalysis.title}
-                     </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {result.correlationAnalysis.correlations.map((corr, index) => (
-                      <div key={index}>
-                        <p className="text-sm font-medium">{corr.variable1} & {corr.variable2}: <span className="font-mono text-primary">{corr.correlation.toFixed(2)}</span></p>
-                        <p className="text-sm text-muted-foreground">{corr.interpretation}</p>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
-
-              {result.segmentationAnalysis && (
-                 <Card>
-                  <CardHeader>
-                     <CardTitle className="text-lg flex items-center gap-2">
-                        <Users className="h-5 w-5" />
-                        {result.segmentationAnalysis.title}
-                     </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                     <UiTable>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Segment</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead className="text-right">Count</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {result.segmentationAnalysis.segments.map((seg, index) => (
-                          <TableRow key={index}>
-                            <TableCell className="font-medium">{seg.name}</TableCell>
-                            <TableCell>{seg.description}</TableCell>
-                            <TableCell className="text-right font-mono">{seg.count}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </UiTable>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {result.recommendedVisualizations.length > 0 && (
-                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {result.recommendedVisualizations.map((vis, index) => (
-                      <DynamicChartRenderer key={index} visualization={vis} />
-                    ))}
-                </div>
-              )}
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Table className="h-5 w-5" />
-                    Column Overview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                    {result.columnNames.map(name => (
-                      <div key={name} className="p-2 bg-muted/50 rounded-md text-sm truncate" title={name}>
-                        {name}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </main>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </main>
+    </>
   )
 }
 
-
 export default function DataAnalyzerPage() {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <DataAnalyzerPageContent />
-    </SidebarProvider>
+    <DataAnalyzerPageContent />
   );
 }
+
+    

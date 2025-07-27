@@ -5,6 +5,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { dark } from '@clerk/themes';
 import { ThemeProvider } from '@/components/theme-provider';
 import { DataProvider } from '@/context/data-context';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 export const metadata: Metadata = {
   title: 'DataSpark',
@@ -43,10 +44,12 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <DataProvider>
+              <SidebarProvider>
                 <div className="min-h-screen w-full bg-background text-foreground">
                 {children}
                 <Toaster />
                 </div>
+              </SidebarProvider>
             </DataProvider>
           </ThemeProvider>
         </body>
@@ -54,3 +57,5 @@ export default function RootLayout({
     </ClerkProvider>
   );
 }
+
+    
