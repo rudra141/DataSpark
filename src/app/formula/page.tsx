@@ -74,12 +74,20 @@ export default function FormulaPage() {
       <main className="flex-1 overflow-y-auto">
         <div className="flex flex-col items-center w-full">
             <div className="w-full max-w-4xl p-4 sm:p-8 space-y-8">
-                <h1 className="text-2xl font-bold">Formula Generator</h1>
+                <header>
+                    <h1 className="text-3xl font-bold flex items-center gap-3">
+                        <Calculator className="h-8 w-8 text-primary" />
+                        Formula Generator
+                    </h1>
+                    <p className="text-muted-foreground mt-2">
+                        Describe any calculation in plain English. Our AI generates the precise, ready-to-use formula for Excel and Google Sheets.
+                    </p>
+                </header>
                 
                 <form onSubmit={handleSubmit}>
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-2xl">Describe Your Calculation</CardTitle>
+                            <CardTitle className="text-xl">Describe Your Calculation</CardTitle>
                             <CardDescription>
                                 Enter a plain English description of what you want to calculate. Be as specific as possible for the best results.
                             </CardDescription>
