@@ -8,10 +8,11 @@ import { chatWithData, type ChatMessage } from '@/ai/flows/chat-with-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AppSidebar } from '@/components/app-sidebar';
+import { AppLayout } from '@/components/layout/app-layout';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import * as XLSX from 'xlsx';
+import { BackgroundGradient } from '@/components/ui/aceternity/background-gradient';
 
 const ChatInterface = ({ csvData, fileName }: { csvData: string; fileName: string }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -60,64 +61,67 @@ const ChatInterface = ({ csvData, fileName }: { csvData: string; fileName: strin
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Bot className="h-6 w-6" />
-          Chat with Your Data
-        </CardTitle>
-        <CardDescription>
-          Ask questions in natural language to get specific insights from <strong>{fileName}</strong>.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[50vh] w-full pr-4">
-          <div className="space-y-4">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`flex gap-3 text-sm ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                {message.role === 'model' && <Bot className="h-6 w-6 shrink-0 text-primary" />}
+    <BackgroundGradient className="rounded-[22px] p-4 sm:p-10 bg-zinc-900">
+        <Card className="bg-transparent border-none shadow-none text-white">
+        <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+            <Bot className="h-6 w-6" />
+            Chat with Your Data
+            </CardTitle>
+            <CardDescription className="text-neutral-400">
+            Ask questions in natural language to get specific insights from <strong>{fileName}</strong>.
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <ScrollArea className="h-[50vh] w-full pr-4">
+            <div className="space-y-4">
+                {messages.map((message, index) => (
                 <div
-                  className={`rounded-lg px-4 py-2 max-w-[90%] ${
-                    message.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted'
-                  }`}
+                    key={index}
+                    className={`flex gap-3 text-sm ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <p dangerouslySetInnerHTML={{ __html: message.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}} />
-                </div>
-              </div>
-            ))}
-            {isChatting && (
-                <div className="flex gap-3 justify-start">
-                    <Bot className="h-6 w-6 shrink-0 text-primary" />
-                    <div className="rounded-lg px-4 py-2 text-sm bg-muted flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin"/>
-                        <span>Thinking...</span>
+                    {message.role === 'model' && <Bot className="h-6 w-6 shrink-0 text-primary" />}
+                    <div
+                    className={`rounded-lg px-4 py-2 max-w-[90%] ${
+                        message.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-zinc-800'
+                    }`}
+                    >
+                    <p dangerouslySetInnerHTML={{ __html: message.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}} />
                     </div>
                 </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-        </ScrollArea>
-      </CardContent>
-      <CardFooter>
-        <form onSubmit={handleChatSubmit} className="flex w-full items-center gap-2">
-          <Input
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="e.g., What is the average value for the 'sales' column?"
-            disabled={isChatting}
-          />
-          <Button type="submit" disabled={isChatting || !question.trim()}>
-            {isChatting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            <span className="sr-only">Send</span>
-          </Button>
-        </form>
-      </CardFooter>
-    </Card>
+                ))}
+                {isChatting && (
+                    <div className="flex gap-3 justify-start">
+                        <Bot className="h-6 w-6 shrink-0 text-primary" />
+                        <div className="rounded-lg px-4 py-2 text-sm bg-zinc-800 flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin"/>
+                            <span>Thinking...</span>
+                        </div>
+                    </div>
+                )}
+                <div ref={messagesEndRef} />
+            </div>
+            </ScrollArea>
+        </CardContent>
+        <CardFooter>
+            <form onSubmit={handleChatSubmit} className="flex w-full items-center gap-2">
+            <Input
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder="e.g., What is the average value for the 'sales' column?"
+                disabled={isChatting}
+                className="bg-zinc-800 border-zinc-700 text-white placeholder:text-neutral-500"
+            />
+            <Button type="submit" disabled={isChatting || !question.trim()}>
+                {isChatting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                <span className="sr-only">Send</span>
+            </Button>
+            </form>
+        </CardFooter>
+        </Card>
+    </BackgroundGradient>
   );
 };
 
@@ -169,26 +173,27 @@ const FileUpload = ({ onFileLoaded }: { onFileLoaded: (csvData: string, fileName
 
   return (
     <div className="w-full">
-        <Card>
-        <CardHeader>
-            <CardTitle>Upload Your Data File</CardTitle>
-            <CardDescription>
-            Select a .csv or .xlsx file from your computer to start asking questions. Max file size: 5MB.
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-            <label htmlFor="file-upload" className="w-full">
-                <div className="flex items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                    <FileUp className="h-6 w-6" />
-                    <span>{file ? file.name : 'Click to select a file'}</span>
-                </div>
-                </div>
-                <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv,.xlsx" />
-            </label>
-        </CardContent>
-        </Card>
-
+        <BackgroundGradient className="rounded-[22px] p-4 sm:p-10 bg-zinc-900">
+            <Card className="bg-transparent border-none shadow-none text-white">
+                <CardHeader>
+                    <CardTitle>Upload Your Data File</CardTitle>
+                    <CardDescription className="text-neutral-400">
+                    Select a .csv or .xlsx file from your computer to start asking questions. Max file size: 5MB.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <label htmlFor="file-upload" className="w-full">
+                        <div className="flex items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer hover:bg-zinc-800 transition-colors border-neutral-700">
+                        <div className="flex items-center gap-2 text-neutral-400">
+                            <FileUp className="h-6 w-6" />
+                            <span>{file ? file.name : 'Click to select a file'}</span>
+                        </div>
+                        </div>
+                        <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv,.xlsx" />
+                    </label>
+                </CardContent>
+            </Card>
+        </BackgroundGradient>
         <AnimatePresence>
             {error && (
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="mt-4">
@@ -215,10 +220,8 @@ export default function ChatWithDataPage() {
   };
 
   return (
-    <div className="flex w-full">
-      <AppSidebar />
-      <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto p-4 sm:p-8 space-y-8">
+    <AppLayout>
+      <div className="w-full max-w-4xl mx-auto p-4 sm:p-8 space-y-8">
             <header>
               <h1 className="text-3xl font-bold flex items-center gap-3">
                 <Bot className="h-8 w-8 text-primary" />
@@ -240,8 +243,9 @@ export default function ChatWithDataPage() {
                   </motion.div>
               )}
             </AnimatePresence>
-          </div>
-      </main>
-    </div>
+        </div>
+    </AppLayout>
   );
 }
+
+    

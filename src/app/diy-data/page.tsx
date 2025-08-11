@@ -14,8 +14,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AppSidebar } from '@/components/app-sidebar';
+import { AppLayout } from '@/components/layout/app-layout';
 import { Textarea } from '@/components/ui/textarea';
+import { BackgroundGradient } from '@/components/ui/aceternity/background-gradient';
 
 type VisualizationResult = NonNullable<GenerateChartOutput>;
 
@@ -24,10 +25,10 @@ const PIE_CHART_COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#AF19FF",
 const BarChartRenderer = ({ vis }: { vis: VisualizationResult }) => (
     <ResponsiveContainer width="100%" height={350}>
         <BarChart data={vis.data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey={vis.config.indexKey} tick={{ fontSize: 12 }} />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)"/>
+            <XAxis dataKey={vis.config.indexKey} tick={{ fontSize: 12 }} stroke="rgba(255, 255, 255, 0.5)"/>
+            <YAxis tick={{ fontSize: 12 }} stroke="rgba(255, 255, 255, 0.5)"/>
+            <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--card))' }} />
             <Bar dataKey={vis.config.dataKey}>
                 {vis.data.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
@@ -40,7 +41,7 @@ const BarChartRenderer = ({ vis }: { vis: VisualizationResult }) => (
 const PieChartRenderer = ({ vis }: { vis: VisualizationResult }) => (
     <ResponsiveContainer width="100%" height={350}>
         <RechartsPieChart>
-            <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+            <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--card))' }} />
             <RechartsPie data={vis.data} dataKey={vis.config.dataKey} nameKey={vis.config.indexKey} cx="50%" cy="50%" outerRadius={100} label>
                 {vis.data.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
@@ -53,10 +54,10 @@ const PieChartRenderer = ({ vis }: { vis: VisualizationResult }) => (
 const ScatterChartRenderer = ({ vis }: { vis: VisualizationResult }) => (
     <ResponsiveContainer width="100%" height={350}>
         <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-            <CartesianGrid />
-            <XAxis type="number" dataKey="x" name="x" tick={{ fontSize: 12 }} />
-            <YAxis type="number" dataKey="y" name="y" tick={{ fontSize: 12 }} />
-            <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+            <CartesianGrid stroke="rgba(255, 255, 255, 0.2)"/>
+            <XAxis type="number" dataKey="x" name="x" tick={{ fontSize: 12 }} stroke="rgba(255, 255, 255, 0.5)"/>
+            <YAxis type="number" dataKey="y" name="y" tick={{ fontSize: 12 }} stroke="rgba(255, 255, 255, 0.5)"/>
+            <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: 'hsl(var(--card))' }} />
             <Scatter name="Data" data={vis.data} fill="hsl(var(--primary))" />
         </ScatterChart>
     </ResponsiveContainer>
@@ -65,10 +66,10 @@ const ScatterChartRenderer = ({ vis }: { vis: VisualizationResult }) => (
 const LineChartRenderer = ({ vis }: { vis: VisualizationResult }) => (
     <ResponsiveContainer width="100%" height={350}>
         <LineChart data={vis.data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey={vis.config.indexKey} tick={{ fontSize: 12 }} />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip cursor={{ stroke: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)"/>
+            <XAxis dataKey={vis.config.indexKey} tick={{ fontSize: 12 }} stroke="rgba(255, 255, 255, 0.5)"/>
+            <YAxis tick={{ fontSize: 12 }} stroke="rgba(255, 255, 255, 0.5)"/>
+            <Tooltip cursor={{ stroke: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--card))' }} />
             <Line type="monotone" dataKey={vis.config.dataKey} stroke="hsl(var(--primary))" activeDot={{ r: 8 }} />
         </LineChart>
     </ResponsiveContainer>
@@ -77,10 +78,10 @@ const LineChartRenderer = ({ vis }: { vis: VisualizationResult }) => (
 const AreaChartRenderer = ({ vis }: { vis: VisualizationResult }) => (
     <ResponsiveContainer width="100%" height={350}>
         <AreaChart data={vis.data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey={vis.config.indexKey} tick={{ fontSize: 12 }} />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip cursor={{ stroke: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)"/>
+            <XAxis dataKey={vis.config.indexKey} tick={{ fontSize: 12 }} stroke="rgba(255, 255, 255, 0.5)"/>
+            <YAxis tick={{ fontSize: 12 }} stroke="rgba(255, 255, 255, 0.5)"/>
+            <Tooltip cursor={{ stroke: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--card))' }} />
             <Area type="monotone" dataKey={vis.config.dataKey} stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
         </AreaChart>
     </ResponsiveContainer>
@@ -150,23 +151,25 @@ const DynamicChartRenderer = ({ visualization }: { visualization: VisualizationR
   };
 
   return (
-    <Card ref={chartRef}>
-      <CardHeader className="flex flex-row items-start justify-between">
-        <div>
-          <CardTitle className="text-lg">{visualization.title}</CardTitle>
-          <CardDescription className="mt-1">{visualization.caption}</CardDescription>
-        </div>
-        <Button variant="ghost" size="icon" onClick={handleDownload} className="h-8 w-8 ml-4">
-          <Download className="h-4 w-4" />
-          <span className="sr-only">Download Chart</span>
-        </Button>
-      </CardHeader>
-      <CardContent>
-          <div className="h-[24rem] w-full">
-            {renderChart()}
-          </div>
-      </CardContent>
-    </Card>
+    <BackgroundGradient className="rounded-[22px] p-4 sm:p-10 bg-zinc-900">
+        <Card ref={chartRef} className="bg-transparent border-none shadow-none text-white">
+        <CardHeader className="flex flex-row items-start justify-between">
+            <div>
+            <CardTitle className="text-lg">{visualization.title}</CardTitle>
+            <CardDescription className="mt-1 text-neutral-400">{visualization.caption}</CardDescription>
+            </div>
+            <Button variant="ghost" size="icon" onClick={handleDownload} className="h-8 w-8 ml-4">
+            <Download className="h-4 w-4" />
+            <span className="sr-only">Download Chart</span>
+            </Button>
+        </CardHeader>
+        <CardContent>
+            <div className="h-[24rem] w-full">
+                {renderChart()}
+            </div>
+        </CardContent>
+        </Card>
+    </BackgroundGradient>
   );
 };
 
@@ -229,13 +232,14 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
 
   return (
     <div className="space-y-6">
-        <Card>
+      <BackgroundGradient className="rounded-[22px] p-4 sm:p-10 bg-zinc-900">
+        <Card className="bg-transparent border-none shadow-none text-white">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                 <Wand2 className="h-6 w-6" />
                 Create a Custom Visualization
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-neutral-400">
                 File loaded: <strong>{fileName}</strong>. Describe the chart you want to create, or use the Enhance button to let AI refine your idea.
                 </CardDescription>
             </CardHeader>
@@ -245,7 +249,7 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
                     placeholder="e.g., 'Show me an area chart of sales over time' or 'a pie chart of sales by region'"
                     value={request}
                     onChange={(e) => setRequest(e.target.value)}
-                    className="min-h-[100px]"
+                    className="min-h-[100px] bg-zinc-800 border-zinc-700 text-white placeholder:text-neutral-500"
                     disabled={isLoading || isEnhancing}
                 />
                 <div className="flex justify-end gap-2">
@@ -277,6 +281,7 @@ const DIYInterface = ({ csvData, fileName }: { csvData: string; fileName: string
                 </form>
             </CardContent>
         </Card>
+      </BackgroundGradient>
       
       <AnimatePresence>
         {error && (
@@ -362,25 +367,27 @@ const FileUpload = ({ onFileLoaded }: { onFileLoaded: (csvData: string, fileName
   
     return (
       <div className="w-full">
-          <Card>
-          <CardHeader>
-              <CardTitle>Upload Your Data File</CardTitle>
-              <CardDescription>
-              Select a .csv or .xlsx file from your computer. Max file size: 5MB.
-              </CardDescription>
-          </CardHeader>
-          <CardContent>
-              <label htmlFor="file-upload" className="w-full">
-                  <div className="flex items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                      <FileUp className="h-6 w-6" />
-                      <span>{file ? file.name : 'Click to select a file'}</span>
-                  </div>
-                  </div>
-                  <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv,.xlsx" />
-              </label>
-          </CardContent>
-          </Card>
+          <BackgroundGradient className="rounded-[22px] p-4 sm:p-10 bg-zinc-900">
+            <Card className="bg-transparent border-none shadow-none text-white">
+            <CardHeader>
+                <CardTitle>Upload Your Data File</CardTitle>
+                <CardDescription className="text-neutral-400">
+                Select a .csv or .xlsx file from your computer. Max file size: 5MB.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <label htmlFor="file-upload" className="w-full">
+                    <div className="flex items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer hover:bg-zinc-800 transition-colors border-neutral-700">
+                    <div className="flex items-center gap-2 text-neutral-400">
+                        <FileUp className="h-6 w-6" />
+                        <span>{file ? file.name : 'Click to select a file'}</span>
+                    </div>
+                    </div>
+                    <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv,.xlsx" />
+                </label>
+            </CardContent>
+            </Card>
+          </BackgroundGradient>
   
           <AnimatePresence>
               {error && (
@@ -407,33 +414,32 @@ export default function DIYDataPage() {
     };
   
     return (
-      <div className="flex w-full">
-          <AppSidebar />
-          <main className="flex-1 overflow-y-auto">
-              <div className="container mx-auto p-4 sm:p-8 space-y-8">
-                <header>
-                    <h1 className="text-3xl font-bold flex items-center gap-3">
-                    <Wand2 className="h-8 w-8 text-primary" />
-                    DIY with Data
-                    </h1>
-                    <p className="text-muted-foreground mt-2">
-                    Upload a CSV or XLSX file and use plain English to generate the exact charts you need.
-                    </p>
-                </header>
-        
-                <AnimatePresence mode="wait">
-                    {csvData && fileName ? (
-                        <motion.div key="diy-interface" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                            <DIYInterface csvData={csvData} fileName={fileName} />
-                        </motion.div>
-                    ) : (
-                        <motion.div key="upload-form" className="w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                            <FileUpload onFileLoaded={handleFileLoaded} />
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-              </div>
-          </main>
-      </div>
+      <AppLayout>
+          <div className="w-full max-w-4xl mx-auto p-4 sm:p-8 space-y-8">
+            <header>
+                <h1 className="text-3xl font-bold flex items-center gap-3">
+                <Wand2 className="h-8 w-8 text-primary" />
+                DIY with Data
+                </h1>
+                <p className="text-muted-foreground mt-2">
+                Upload a CSV or XLSX file and use plain English to generate the exact charts you need.
+                </p>
+            </header>
+    
+            <AnimatePresence mode="wait">
+                {csvData && fileName ? (
+                    <motion.div key="diy-interface" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                        <DIYInterface csvData={csvData} fileName={fileName} />
+                    </motion.div>
+                ) : (
+                    <motion.div key="upload-form" className="w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                        <FileUpload onFileLoaded={handleFileLoaded} />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+          </div>
+      </AppLayout>
     );
 }
+
+    

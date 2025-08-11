@@ -1,0 +1,54 @@
+diff --git a/node_modules/@react-three/fiber/dist/react-three-fiber.esm.js b/node_modules/@react-three/fiber/dist/react-three-fiber.esm.js
+index 921a2c3..5b367d3 100644
+--- a/node_modules/@react-three/fiber/dist/react-three-fiber.esm.js
++++ b/node_modules/@react-three/fiber/dist/react-three-fiber.esm.js
+@@ -2253,7 +2253,7 @@
+ // React currently throws a warning when using useId in a server component.
+ // This is a workaround to suppress the warning.
+ // TODO: remove this when the warning is removed
+-const useId = /*#__PURE__*/ React[/* @__PURE__ */ "useId".toString()];
++const useId = React.useId;
+ /**
+  * A suspenseful image loader.
+  */
+diff --git a/node_modules/@react-three/fiber/dist/events-776716bd.esm.js b/node_modules/@react-three/fiber/dist/events-776716bd.esm.js
+index f30252b..4e9f5e5 100644
+--- a/node_modules/@react-three/fiber/dist/events-776716bd.esm.js
++++ b/node_modules/@react-three/fiber/dist/events-776716bd.esm.js
+@@ -1670,8 +1670,9 @@
+ 
+ function createRenderer(reconciler) {
+   const {
+-    $$$reconciler
+-  } = reconciler;
++    $$$reconciler,
++    __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
++  } = reconciler;
+   function render(element, container, callback) {
+     const root = container._root;
+     if (root) {
+@@ -1684,7 +1685,7 @@
+       callback
+     });
+   }
+-  const reconciler$1 = $$$reconciler;
++  const reconciler$1 = $$$reconciler || __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+   function unmountComponentAtNode(container, callback) {
+     const root = container._root;
+     if (root) {
+diff --git a/node_modules/@react-three/fiber/package.json b/node_modules/@react-three/fiber/package.json
+index 32717e3..e701962 100644
+--- a/node_modules/@react-three/fiber/package.json
++++ b/node_modules/@react-three/fiber/package.json
+@@ -91,6 +91,9 @@
+   "sideEffects": false,
+   "type": "module",
+   "version": "8.16.8",
+-  "bugs": {
+-    "url": "https://github.com/pmndrs/react-three-fiber/issues"
++  "scripts": {
++    "postinstall": "patch-package"
+   }
+ }
++
++

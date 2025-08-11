@@ -13,7 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AppSidebar } from '@/components/app-sidebar';
+import { AppLayout } from '@/components/layout/app-layout';
+import { BackgroundGradient } from '@/components/ui/aceternity/background-gradient';
 
 type AnalysisResult = AnalyzeDataOutput;
 type RecommendedVisualization = AnalysisResult['recommendedVisualizations'][0];
@@ -55,34 +56,36 @@ const ResultSkeleton = () => (
 );
 
 const InsightCard = ({ title, stats, icon: Icon }: { title: string; stats: { columnName: string; value: string | number }[], icon?: React.ElementType }) => (
-  <Card>
-    <CardHeader>
-      <CardTitle className="text-lg flex items-center gap-2">
-        {Icon && <Icon className="h-5 w-5" />}
-        {title}
-      </CardTitle>
-    </CardHeader>
-    <CardContent>
-      <ul className="space-y-2 text-sm">
-        {stats.map((stat, index) => (
-          <li key={index} className="flex justify-between items-center gap-2">
-            <span className="font-medium text-muted-foreground truncate pr-2">{stat.columnName}</span>
-            <span className="font-mono text-foreground bg-muted/50 px-2 py-0.5 rounded-md">{String(stat.value)}</span>
-          </li>
-        ))}
-      </ul>
-    </CardContent>
-  </Card>
+  <BackgroundGradient className="rounded-[22px] p-4 sm:p-10 bg-zinc-900 h-full">
+    <Card className="bg-transparent border-none shadow-none h-full text-white">
+        <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+            {Icon && <Icon className="h-5 w-5" />}
+            {title}
+        </CardTitle>
+        </CardHeader>
+        <CardContent>
+        <ul className="space-y-2 text-sm">
+            {stats.map((stat, index) => (
+            <li key={index} className="flex justify-between items-center gap-2">
+                <span className="font-medium text-neutral-400 truncate pr-2">{stat.columnName}</span>
+                <span className="font-mono bg-zinc-800 px-2 py-0.5 rounded-md">{String(stat.value)}</span>
+            </li>
+            ))}
+        </ul>
+        </CardContent>
+    </Card>
+  </BackgroundGradient>
 );
 
 
 const BarChartRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
     <ResponsiveContainer width="100%" height={300}>
         <BarChart data={vis.data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey={vis.config.indexKey} tick={{ fontSize: 12 }} />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)"/>
+            <XAxis dataKey={vis.config.indexKey} tick={{ fontSize: 12 }} stroke="rgba(255, 255, 255, 0.5)"/>
+            <YAxis tick={{ fontSize: 12 }} stroke="rgba(255, 255, 255, 0.5)"/>
+            <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--card))' }} />
             <Bar dataKey={vis.config.dataKey}>
                 {vis.data.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
@@ -95,7 +98,7 @@ const BarChartRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
 const PieChartRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
     <ResponsiveContainer width="100%" height={300}>
         <RechartsPieChart>
-            <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+            <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--card))' }} />
             <RechartsPie data={vis.data} dataKey={vis.config.dataKey} nameKey={vis.config.indexKey} cx="50%" cy="50%" outerRadius={80} label>
                 {vis.data.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />
@@ -108,10 +111,10 @@ const PieChartRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
 const ScatterChartRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
     <ResponsiveContainer width="100%" height={300}>
         <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-            <CartesianGrid />
-            <XAxis type="number" dataKey="x" name="x" tick={{ fontSize: 12 }} />
-            <YAxis type="number" dataKey="y" name="y" tick={{ fontSize: 12 }} />
-            <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+            <CartesianGrid stroke="rgba(255, 255, 255, 0.2)"/>
+            <XAxis type="number" dataKey="x" name="x" tick={{ fontSize: 12 }} stroke="rgba(255, 255, 255, 0.5)"/>
+            <YAxis type="number" dataKey="y" name="y" tick={{ fontSize: 12 }} stroke="rgba(255, 255, 255, 0.5)"/>
+            <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: 'hsl(var(--card))' }} />
             <Scatter name="Data" data={vis.data} fill="hsl(var(--primary))" />
         </ScatterChart>
     </ResponsiveContainer>
@@ -120,10 +123,10 @@ const ScatterChartRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
 const LineChartRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
     <ResponsiveContainer width="100%" height={300}>
         <LineChart data={vis.data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey={vis.config.indexKey} tick={{ fontSize: 12 }} />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip cursor={{ stroke: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)"/>
+            <XAxis dataKey={vis.config.indexKey} tick={{ fontSize: 12 }} stroke="rgba(255, 255, 255, 0.5)"/>
+            <YAxis tick={{ fontSize: 12 }} stroke="rgba(255, 255, 255, 0.5)"/>
+            <Tooltip cursor={{ stroke: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--card))' }} />
             <Line type="monotone" dataKey={vis.config.dataKey} stroke="hsl(var(--primary))" activeDot={{ r: 8 }} />
         </LineChart>
     </ResponsiveContainer>
@@ -132,10 +135,10 @@ const LineChartRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
 const AreaChartRenderer = ({ vis }: { vis: RecommendedVisualization }) => (
     <ResponsiveContainer width="100%" height={300}>
         <AreaChart data={vis.data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey={vis.config.indexKey} tick={{ fontSize: 12 }} />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip cursor={{ stroke: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)"/>
+            <XAxis dataKey={vis.config.indexKey} tick={{ fontSize: 12 }} stroke="rgba(255, 255, 255, 0.5)"/>
+            <YAxis tick={{ fontSize: 12 }} stroke="rgba(255, 255, 255, 0.5)"/>
+            <Tooltip cursor={{ stroke: 'hsl(var(--muted))' }} contentStyle={{ backgroundColor: 'hsl(var(--card))' }} />
             <Area type="monotone" dataKey={vis.config.dataKey} stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
         </AreaChart>
     </ResponsiveContainer>
@@ -205,32 +208,34 @@ const FileUpload = ({ onFileLoaded, children }: { onFileLoaded: (csvData: string
 
   return (
     <div className="w-full">
-        <Card>
-        <CardHeader>
-            <CardTitle>Upload Your Data File</CardTitle>
-            <CardDescription>
-            Select a .csv or .xlsx file from your computer. Max file size: 5MB.
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-            <label htmlFor="file-upload" className="flex-1 w-full">
-                <div className="flex items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                    <FileUp className="h-6 w-6" />
-                    <span>{file ? file.name : 'Click to select a file'}</span>
-                </div>
-                </div>
-                <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv,.xlsx" />
-            </label>
-            {children && (
-                <div className="w-full sm:w-auto">
-                    {children}
-                </div>
-            )}
-            </div>
-        </CardContent>
-        </Card>
+        <BackgroundGradient className="rounded-[22px] p-4 sm:p-10 bg-zinc-900">
+            <Card className="bg-transparent border-none shadow-none text-white">
+                <CardHeader>
+                    <CardTitle>Upload Your Data File</CardTitle>
+                    <CardDescription className="text-neutral-400">
+                    Select a .csv or .xlsx file from your computer. Max file size: 5MB.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <label htmlFor="file-upload" className="flex-1 w-full">
+                        <div className="flex items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer hover:bg-zinc-800 transition-colors border-neutral-700">
+                        <div className="flex items-center gap-2 text-neutral-400">
+                            <FileUp className="h-6 w-6" />
+                            <span>{file ? file.name : 'Click to select a file'}</span>
+                        </div>
+                        </div>
+                        <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv,.xlsx" />
+                    </label>
+                    {children && (
+                        <div className="w-full sm:w-auto">
+                            {children}
+                        </div>
+                    )}
+                    </div>
+                </CardContent>
+            </Card>
+        </BackgroundGradient>
 
         <AnimatePresence>
             {error && (
@@ -290,23 +295,25 @@ const DynamicChartRenderer = ({ visualization }: { visualization: RecommendedVis
   };
 
   return (
-    <Card ref={chartRef}>
-      <CardHeader className="flex flex-row items-start justify-between">
-        <div>
-          <CardTitle className="text-lg">{visualization.title}</CardTitle>
-          <CardDescription className="mt-1">{visualization.caption}</CardDescription>
-        </div>
-        <Button variant="ghost" size="icon" onClick={handleDownload} className="h-8 w-8 ml-4 shrink-0">
-          <Download className="h-4 w-4" />
-          <span className="sr-only">Download Chart</span>
-        </Button>
-      </CardHeader>
-      <CardContent>
-          <div className="h-80 w-full">
-            {renderChart()}
-          </div>
-      </CardContent>
-    </Card>
+    <BackgroundGradient className="rounded-[22px] p-4 sm:p-10 bg-zinc-900">
+        <Card ref={chartRef} className="bg-transparent border-none shadow-none text-white">
+        <CardHeader className="flex flex-row items-start justify-between">
+            <div>
+            <CardTitle className="text-lg">{visualization.title}</CardTitle>
+            <CardDescription className="mt-1 text-neutral-400">{visualization.caption}</CardDescription>
+            </div>
+            <Button variant="ghost" size="icon" onClick={handleDownload} className="h-8 w-8 ml-4 shrink-0">
+            <Download className="h-4 w-4" />
+            <span className="sr-only">Download Chart</span>
+            </Button>
+        </CardHeader>
+        <CardContent>
+            <div className="h-80 w-full">
+                {renderChart()}
+            </div>
+        </CardContent>
+        </Card>
+    </BackgroundGradient>
   );
 };
 
@@ -346,10 +353,8 @@ export default function DataAnalyzerPage() {
   };
 
   return (
-    <div className="flex w-full">
-      <AppSidebar />
-      <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto p-4 sm:p-8 space-y-8">
+    <AppLayout>
+        <div className="w-full max-w-6xl mx-auto p-4 sm:p-8 space-y-8">
           <header>
             <h1 className="text-3xl font-bold flex items-center gap-3">
               <BarChartIcon className="h-8 w-8 text-primary" />
@@ -398,27 +403,30 @@ export default function DataAnalyzerPage() {
                 className="space-y-6"
               >
                 {result.executiveSummary && (
-                  <Card className="bg-primary/5 border-primary/20">
-                    <CardHeader>
-                      <CardTitle className="text-xl flex items-center gap-2">
-                        <Sparkles className="h-5 w-5 text-primary" />
-                        AI Executive Summary
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-base leading-relaxed">{result.executiveSummary}</p>
-                    </CardContent>
-                  </Card>
+                   <BackgroundGradient className="rounded-[22px] p-4 sm:p-10 bg-zinc-900">
+                    <Card className="bg-transparent border-none shadow-none text-white">
+                        <CardHeader>
+                        <CardTitle className="text-xl flex items-center gap-2">
+                            <Sparkles className="h-5 w-5 text-primary" />
+                            AI Executive Summary
+                        </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                        <p className="text-base leading-relaxed text-neutral-300">{result.executiveSummary}</p>
+                        </CardContent>
+                    </Card>
+                  </BackgroundGradient>
                 )}
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-xl">Analysis for: {result.fileName}</CardTitle>
-                    <CardDescription>
-                      Found {result.rowCount} rows and {result.columnCount} columns.
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
+                 <BackgroundGradient className="rounded-[22px] p-4 sm:p-10 bg-zinc-900">
+                    <Card className="bg-transparent border-none shadow-none text-white">
+                    <CardHeader>
+                        <CardTitle className="text-xl">Analysis for: {result.fileName}</CardTitle>
+                        <CardDescription className="text-neutral-400">
+                        Found {result.rowCount} rows and {result.columnCount} columns.
+                        </CardDescription>
+                    </CardHeader>
+                    </Card>
+                </BackgroundGradient>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <InsightCard title="Key Statistics" stats={result.summaryStats.stats} />
@@ -427,7 +435,8 @@ export default function DataAnalyzerPage() {
                 </div>
 
                 {result.correlationAnalysis && (
-                  <Card>
+                  <BackgroundGradient className="rounded-[22px] p-4 sm:p-10 bg-zinc-900">
+                  <Card className="bg-transparent border-none shadow-none text-white">
                     <CardHeader>
                       <CardTitle className="text-lg flex items-center gap-2">
                         <LineChartIcon className="h-5 w-5" />
@@ -435,16 +444,16 @@ export default function DataAnalyzerPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <p className="text-muted-foreground">{result.correlationAnalysis.interpretation}</p>
+                      <p className="text-neutral-400">{result.correlationAnalysis.interpretation}</p>
                       <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-border text-sm">
-                          <thead className="bg-muted/50">
+                        <table className="min-w-full divide-y divide-neutral-700 text-sm">
+                          <thead className="bg-zinc-800">
                             <tr>
                               <th className="px-4 py-2 text-left font-medium"></th>
                               {result.correlationAnalysis.matrix[0]?.values.map(v => <th key={v.column} className="px-4 py-2 text-center font-medium">{v.column}</th>)}
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-border">
+                          <tbody className="divide-y divide-neutral-700">
                             {result.correlationAnalysis.matrix.map(row => (
                               <tr key={row.column}>
                                 <td className="px-4 py-2 font-medium">{row.column}</td>
@@ -458,26 +467,29 @@ export default function DataAnalyzerPage() {
                       </div>
                     </CardContent>
                   </Card>
+                  </BackgroundGradient>
                 )}
 
                 {result.segmentationAnalysis && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Users className="h-5 w-5" />
-                        Segmentation Analysis
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <p className="text-muted-foreground">{result.segmentationAnalysis.summary}</p>
-                        {result.segmentationAnalysis.segments.map((segment, index) => (
-                          <div key={index} className="p-3 border rounded-md bg-muted/50">
-                            <p className="font-semibold">{segment.name}</p>
-                            <p className="text-sm text-muted-foreground">{segment.description}</p>
-                          </div>
-                        ))}
-                    </CardContent>
-                  </Card>
+                  <BackgroundGradient className="rounded-[22px] p-4 sm:p-10 bg-zinc-900">
+                    <Card className="bg-transparent border-none shadow-none text-white">
+                        <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                            <Users className="h-5 w-5" />
+                            Segmentation Analysis
+                        </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                        <p className="text-neutral-400">{result.segmentationAnalysis.summary}</p>
+                            {result.segmentationAnalysis.segments.map((segment, index) => (
+                            <div key={index} className="p-3 border rounded-md bg-zinc-800 border-neutral-700">
+                                <p className="font-semibold">{segment.name}</p>
+                                <p className="text-sm text-neutral-400">{segment.description}</p>
+                            </div>
+                            ))}
+                        </CardContent>
+                    </Card>
+                 </BackgroundGradient>
                 )}
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -486,7 +498,8 @@ export default function DataAnalyzerPage() {
                   ))}
                 </div>
                 
-                <Card>
+                <BackgroundGradient className="rounded-[22px] p-4 sm:p-10 bg-zinc-900">
+                <Card className="bg-transparent border-none shadow-none text-white">
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Table className="h-5 w-5" />
@@ -496,19 +509,21 @@ export default function DataAnalyzerPage() {
                   <CardContent>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
                       {result.columnNames.map(name => (
-                        <div key={name} className="p-2 bg-muted/50 rounded-md text-sm truncate" title={name}>
+                        <div key={name} className="p-2 bg-zinc-800 rounded-md text-sm truncate" title={name}>
                           {name}
                         </div>
                       ))}
                     </div>
                   </CardContent>
                 </Card>
+                </BackgroundGradient>
 
               </motion.div>
             )}
           </AnimatePresence>
         </div>
-      </main>
-    </div>
+    </AppLayout>
   )
 }
+
+    

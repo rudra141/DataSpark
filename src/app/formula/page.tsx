@@ -13,7 +13,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AnimatePresence, motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppLayout } from "@/components/layout/app-layout";
+import { BackgroundGradient } from "@/components/ui/aceternity/background-gradient";
 
 export default function FormulaPage() {
   const [description, setDescription] = useState("");
@@ -69,25 +70,24 @@ export default function FormulaPage() {
   );
 
   return (
-    <div className="flex w-full">
-      <AppSidebar />
-      <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto p-4 sm:p-8 space-y-8">
-            <header>
-                <h1 className="text-3xl font-bold flex items-center gap-3">
-                    <Calculator className="h-8 w-8 text-primary" />
-                    Formula Generator
-                </h1>
-                <p className="text-muted-foreground mt-2">
-                    Describe any calculation in plain English. Our AI generates the precise, ready-to-use formula for Excel and Google Sheets.
-                </p>
-            </header>
-            
-            <form onSubmit={handleSubmit}>
-                <Card>
+    <AppLayout>
+      <div className="w-full max-w-4xl mx-auto p-4 sm:p-8 space-y-8">
+          <header>
+              <h1 className="text-3xl font-bold flex items-center gap-3">
+                  <Calculator className="h-8 w-8 text-primary" />
+                  Formula Generator
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                  Describe any calculation in plain English. Our AI generates the precise, ready-to-use formula for Excel and Google Sheets.
+              </p>
+          </header>
+          
+          <form onSubmit={handleSubmit}>
+              <BackgroundGradient className="rounded-[22px] p-4 sm:p-10 bg-zinc-900">
+                <Card className="bg-transparent border-none shadow-none text-white">
                     <CardHeader>
                         <CardTitle className="text-xl">Describe Your Calculation</CardTitle>
-                        <CardDescription>
+                        <CardDescription className="text-neutral-400">
                             Enter a plain English description of what you want to calculate. Be as specific as possible for the best results.
                         </CardDescription>
                     </CardHeader>
@@ -96,7 +96,7 @@ export default function FormulaPage() {
                         placeholder="e.g., 'Sum of column A if column B is 'Completed' and column C is after today'"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        className="min-h-[120px] text-base"
+                        className="min-h-[120px] text-base bg-zinc-800 border-zinc-700 text-white placeholder:text-neutral-500"
                         required
                         />
                         <AnimatePresence>
@@ -138,80 +138,88 @@ export default function FormulaPage() {
                         </Button>
                     </CardFooter>
                 </Card>
-            </form>
+              </BackgroundGradient>
+          </form>
 
-            <AnimatePresence>
-                {error && (
-                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                        <Alert variant="destructive">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertTitle>Error</AlertTitle>
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+          <AnimatePresence>
+              {error && (
+                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                      <Alert variant="destructive">
+                          <AlertTriangle className="h-4 w-4" />
+                          <AlertTitle>Error</AlertTitle>
+                          <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                  </motion.div>
+              )}
+          </AnimatePresence>
 
-            <AnimatePresence mode="wait">
-            {isLoading && <ResultSkeletons key="skeleton" />}
+          <AnimatePresence mode="wait">
+          {isLoading && <ResultSkeletons key="skeleton" />}
 
-            {result && !isLoading && (
-                <motion.div
-                key="result"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="space-y-6"
-                >
-                <Card>
-                    <CardHeader>
-                    <CardTitle>Excel Formula</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                    <div className="flex items-center space-x-2">
-                        <Input
-                        id="excel-formula"
-                        value={result.excelFormula}
-                        readOnly
-                        className="font-mono text-sm"
-                        />
-                        <CopyButton textToCopy={result.excelFormula} />
-                    </div>
-                    </CardContent>
+          {result && !isLoading && (
+              <motion.div
+              key="result"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+              >
+              <BackgroundGradient className="rounded-[22px] p-4 sm:p-10 bg-zinc-900">
+                <Card className="bg-transparent border-none shadow-none text-white">
+                  <CardHeader>
+                  <CardTitle>Excel Formula</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                  <div className="flex items-center space-x-2">
+                      <Input
+                      id="excel-formula"
+                      value={result.excelFormula}
+                      readOnly
+                      className="font-mono text-sm bg-zinc-800 border-zinc-700 text-white"
+                      />
+                      <CopyButton textToCopy={result.excelFormula} />
+                  </div>
+                  </CardContent>
                 </Card>
+              </BackgroundGradient>
 
-                <Card>
-                    <CardHeader>
-                    <CardTitle>Google Sheets Formula</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                    <div className="flex items-center space-x-2">
-                        <Input
-                        id="gsheets-formula"
-                        value={result.googleSheetsFormula}
-                        readOnly
-                        className="font-mono text-sm"
-                        />
-                        <CopyButton textToCopy={result.googleSheetsFormula} />
-                    </div>
-                    </CardContent>
+              <BackgroundGradient className="rounded-[22px] p-4 sm:p-10 bg-zinc-900">
+                <Card className="bg-transparent border-none shadow-none text-white">
+                  <CardHeader>
+                  <CardTitle>Google Sheets Formula</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                  <div className="flex items-center space-x-2">
+                      <Input
+                      id="gsheets-formula"
+                      value={result.googleSheetsFormula}
+                      readOnly
+                      className="font-mono text-sm bg-zinc-800 border-zinc-700 text-white"
+                      />
+                      <CopyButton textToCopy={result.googleSheetsFormula} />
+                  </div>
+                  </CardContent>
                 </Card>
-
-                <Card>
+              </BackgroundGradient>
+              
+              <BackgroundGradient className="rounded-[22px] p-4 sm:p-10 bg-zinc-900">
+                <Card className="bg-transparent border-none shadow-none text-white">
                     <CardHeader>
                     <CardTitle>Explanation</CardTitle>
                     </CardHeader>
                     <CardContent>
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <div className="prose prose-sm prose-invert max-w-none text-neutral-300">
                         <p>{result.explanation}</p>
                     </div>
                     </CardContent>
                 </Card>
-                </motion.div>
-            )}
-            </AnimatePresence>
-        </div>
-      </main>
-    </div>
+              </BackgroundGradient>
+              </motion.div>
+          )}
+          </AnimatePresence>
+      </div>
+    </AppLayout>
   );
 }
+
+    
