@@ -410,31 +410,29 @@ export default function DIYDataPage() {
       <div className="flex w-full">
           <AppSidebar />
           <main className="flex-1 overflow-y-auto">
-            <div className="flex flex-col items-center w-full">
-                <div className="w-full max-w-4xl p-4 sm:p-8 space-y-8">
-                    <header>
-                        <h1 className="text-3xl font-bold flex items-center gap-3">
-                        <Wand2 className="h-8 w-8 text-primary" />
-                        DIY with Data
-                        </h1>
-                        <p className="text-muted-foreground mt-2">
-                        Upload a CSV or XLSX file and use plain English to generate the exact charts you need.
-                        </p>
-                    </header>
-            
-                    <AnimatePresence mode="wait">
-                        {csvData && fileName ? (
-                            <motion.div key="diy-interface" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                                <DIYInterface csvData={csvData} fileName={fileName} />
-                            </motion.div>
-                        ) : (
-                            <motion.div key="upload-form" className="w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                                <FileUpload onFileLoaded={handleFileLoaded} />
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-            </div>
+              <div className="container mx-auto p-4 sm:p-8 space-y-8">
+                <header>
+                    <h1 className="text-3xl font-bold flex items-center gap-3">
+                    <Wand2 className="h-8 w-8 text-primary" />
+                    DIY with Data
+                    </h1>
+                    <p className="text-muted-foreground mt-2">
+                    Upload a CSV or XLSX file and use plain English to generate the exact charts you need.
+                    </p>
+                </header>
+        
+                <AnimatePresence mode="wait">
+                    {csvData && fileName ? (
+                        <motion.div key="diy-interface" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                            <DIYInterface csvData={csvData} fileName={fileName} />
+                        </motion.div>
+                    ) : (
+                        <motion.div key="upload-form" className="w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                            <FileUpload onFileLoaded={handleFileLoaded} />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+              </div>
           </main>
       </div>
     );

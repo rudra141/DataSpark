@@ -218,8 +218,7 @@ export default function ChatWithDataPage() {
     <div className="flex w-full">
       <AppSidebar />
       <main className="flex-1 overflow-y-auto">
-        <div className="flex flex-col items-center w-full">
-          <div className="w-full max-w-4xl p-4 sm:p-8 space-y-8">
+        <div className="container mx-auto p-4 sm:p-8 space-y-8">
             <header>
               <h1 className="text-3xl font-bold flex items-center gap-3">
                 <Bot className="h-8 w-8 text-primary" />
@@ -242,7 +241,6 @@ export default function ChatWithDataPage() {
               )}
             </AnimatePresence>
           </div>
-        </div>
       </main>
     </div>
   );
