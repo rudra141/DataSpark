@@ -111,8 +111,8 @@ export default function HomePage() {
             <div className="absolute inset-0 h-full w-full bg-gradient-to-br from-background to-primary/10"></div>
             <div className="relative z-10 flex flex-col items-center justify-center text-center px-4">
                 <TextGenerateEffect
-                    words="Your AI Assistant for Data & Spreadsheets"
-                    className="font-headline text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-fuchsia-500 to-orange-400"
+                    words="Unlock the Power of Your Data"
+                    className="font-headline text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-teal-500 to-pink-500"
                 />
                 <motion.p
                     initial={{ opacity: 0, y: 20 }}
@@ -232,5 +232,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-    
