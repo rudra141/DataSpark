@@ -215,7 +215,7 @@ export default function ChatWithDataPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full">
+    <div className="flex w-full">
       <AppSidebar />
       <main className="flex-1 p-4 sm:p-8 overflow-y-auto">
         <div className="mx-auto max-w-4xl w-full space-y-8">
@@ -245,5 +245,3 @@ export default function ChatWithDataPage() {
     </div>
   );
 }
-
-    
