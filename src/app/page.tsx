@@ -9,6 +9,7 @@ import { ArrowRight, Bot, BarChart, Calculator, Wand2, Sparkles } from "lucide-r
 import { motion } from "framer-motion";
 import { BackgroundGradient } from "@/components/ui/aceternity/background-gradient";
 import { SignedIn, SignedOut, UserButton, SignUpButton, SignInButton } from "@clerk/nextjs";
+import { Typewriter } from "@/components/ui/typewriter-text";
 
 const features = [
   {
@@ -115,7 +116,7 @@ export default function HomePage() {
                     transition={{ delay: 0.2, duration: 0.8 }}
                     className="font-headline text-6xl sm:text-7xl md:text-8xl font-extrabold tracking-tight text-white"
                 >
-                    Unlock the Power of Data
+                    <Typewriter text="Unlock the Power of Data" speed={100} loop={false} />
                 </motion.h1>
                 <motion.p
                     initial={{ opacity: 0, y: 20 }}
