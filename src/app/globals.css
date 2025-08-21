@@ -61,6 +61,6 @@ h1, h2, h3, h4, h5, h6 {
 
 .rotatingGradient {
     --r: 0deg;
-    background: conic-gradient(from var(--r) at 50% 50%, #7b61ff, #ffc414, #1ca0fb, #00ccb1, #7b61ff);
+    background: conic-gradient(from var(--r) at 50% 50%, hsl(var(--primary)), #ffffff, hsl(var(--primary) / 0.8), #ffffff, hsl(var(--primary)));
     animation: rotate 2s linear infinite;
 }

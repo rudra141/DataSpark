@@ -22,7 +22,7 @@ const GradientButton = ({
   const commonGradientStyles = `
     relative rounded-[50px] cursor-pointer
     after:content-[""] after:block after:absolute after:bg-[var(--color-background)]
-    after:inset-[5px] after:rounded-[45px] after:z-[1]
+    after:inset-[2px] after:rounded-[45px] after:z-[1]
     after:transition-opacity after:duration-300 after:ease-linear
     flex items-center justify-center
     ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
