@@ -99,7 +99,7 @@ export default function HomePage() {
       <Header />
       <main>
         {/* Hero Section */}
-        <div className="relative w-full bg-background h-auto py-52 md:py-72 overflow-hidden">
+        <div className="relative w-full bg-background h-auto py-32 md:py-40 overflow-hidden">
             <Starfield />
             <div className="relative z-10 flex flex-col items-center justify-center text-center px-4">
                 <motion.div
