@@ -86,7 +86,7 @@ export default function HomePage() {
             <div className="relative z-10 flex flex-col items-center justify-center text-center px-4">
                 <TextGenerateEffect
                     words="UNLOCK THE POWER OF YOUR DATA"
-                    className="font-headline uppercase text-6xl sm:text-7xl md:text-9xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-red-500"
+                    className="font-headline uppercase text-7xl sm:text-8xl md:text-9xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-red-500"
                 />
                 <motion.p
                     initial={{ opacity: 0, y: 20 }}
