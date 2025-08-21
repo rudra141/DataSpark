@@ -40,7 +40,7 @@ const features = [
 
 const CTAButton = () => (
     <Button size="lg" className="shadow-lg shadow-primary/20" asChild>
-        <Link href="/data-analyzer">
+        <Link href="/formula">
             Start free trial <ArrowRight className="ml-2 h-5 w-5" />
         </Link>
     </Button>
