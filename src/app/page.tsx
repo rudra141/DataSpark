@@ -81,18 +81,18 @@ export default function HomePage() {
       <Header />
       <main>
         {/* Hero Section */}
-        <div className="relative w-full bg-background h-auto py-40 md:py-60 overflow-hidden">
+        <div className="relative w-full bg-background h-auto py-52 md:py-72 overflow-hidden">
             <div className="absolute inset-0 h-full w-full bg-gradient-to-br from-background to-primary/10"></div>
             <div className="relative z-10 flex flex-col items-center justify-center text-center px-4">
                 <TextGenerateEffect
                     words="UNLOCK THE POWER OF YOUR DATA"
-                    className="font-headline uppercase text-5xl sm:text-6xl md:text-8xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-red-500"
+                    className="font-headline uppercase text-6xl sm:text-7xl md:text-9xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-red-500"
                 />
                 <motion.p
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 1.5, duration: 0.8 }}
-                    className="mt-6 max-w-3xl mx-auto text-xl text-neutral-300"
+                    className="mt-8 max-w-4xl mx-auto text-xl md:text-2xl text-neutral-300"
                 >
                     Generate formulas, analyze datasets, and build custom charts in plain English. Stop wrestling with data and start getting answers.
                 </motion.p>
@@ -100,7 +100,7 @@ export default function HomePage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 2, duration: 0.8 }}
-                    className="mt-10"
+                    className="mt-12"
                 >
                     <CTAButton />
                 </motion.div>
@@ -122,7 +122,11 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <motion.div key={index}>
+              <motion.div 
+                key={index}
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
                 <Link href={feature.href}>
                     <BackgroundGradient className="rounded-[22px] p-4 sm:p-6 bg-zinc-900 h-full">
                         <Card className="h-full text-center bg-transparent border-none shadow-none text-white flex flex-col justify-between">
