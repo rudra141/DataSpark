@@ -42,7 +42,7 @@ DataSpark is a **premium SaaS platform** that transforms raw datasets into **for
 
 |Data Analysis|
 |--------------|
-> https://github.com/user-attachments/assets/281179b7-1152-452c-b907-864b8a9b2ee7 |
+> https://github.com/user-attachments/assets/281179b7-1152-452c-b907-864b8a9b2ee7 
 
 
 ---
