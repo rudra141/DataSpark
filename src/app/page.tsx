@@ -124,7 +124,7 @@ export default function HomePage() {
                     transition={{ delay: 0.5, duration: 0.8 }}
                     className="mt-8 max-w-2xl mx-auto text-xl md:text-2xl text-neutral-300"
                 >
-                    DataSpark uses AI to craft formulas, analyze data, and build charts that actually drive decisions. Supercharge your workflow in minutes.
+                    Formulas, analysis, and charts—done for you in seconds. Make decisions that matter with DataSpark.
                 </motion.p>
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
