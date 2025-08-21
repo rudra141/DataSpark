@@ -18,7 +18,6 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '../theme-toggle';
 
 const menuItems = [
     {
@@ -90,7 +89,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         <SidebarTrigger />
                     </div>
                     <div className="flex flex-1 items-center justify-end space-x-2">
-                        <ThemeToggle />
                         <SignedOut>
                             <Button variant="ghost" asChild>
                                 <SignInButton />
@@ -115,6 +113,3 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
-
-
-    

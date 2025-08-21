@@ -4,7 +4,6 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ClerkProvider } from '@clerk/nextjs'
 import { dark } from '@clerk/themes';
-import { ThemeProvider } from '@/components/theme-provider';
 
 export const metadata: Metadata = {
   title: 'DataSpark',
@@ -22,7 +21,7 @@ export default function RootLayout({
         baseTheme: dark,
       }}
     >
-      <html lang="en" suppressHydrationWarning>
+      <html lang="en" className="dark">
         <head>
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
@@ -36,17 +35,10 @@ export default function RootLayout({
           />
         </head>
         <body className="font-body antialiased">
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem={false}
-            disableTransitionOnChange
-          >
             <div className="min-h-screen w-full bg-background text-foreground">
              {children}
             </div>
             <Toaster />
-          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>

@@ -10,7 +10,6 @@ import { motion } from "framer-motion";
 import { TextGenerateEffect } from "@/components/ui/aceternity/text-generate-effect";
 import { BackgroundGradient } from "@/components/ui/aceternity/background-gradient";
 import { SignedIn, SignedOut, UserButton, SignUpButton, SignInButton } from "@clerk/nextjs";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 const features = [
   {
@@ -57,7 +56,6 @@ const Header = () => (
             </Link>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-4">
-          <ThemeToggle />
           <SignedOut>
             <Button variant="ghost" asChild>
                 <SignInButton />
