@@ -28,9 +28,12 @@ DataSpark is a **premium SaaS platform** that transforms raw datasets into **for
 
 ### 🔍 **Chat with Data & Formula for Excel**  
 
-| Chat with data | Formula Bot |
-|--------------------|--------------------------|
-| ![Dashboard Screenshot](https://github.com/user-attachments/assets/ed8d0cf1-7387-4f50-bcfe-f0a43689ffaa) | ![Formula Bot](./screenshots/chat.png) |
+| Chat with data |
+|--------------------|
+| ![Dashboard Screenshot](https://github.com/user-attachments/assets/ed8d0cf1-7387-4f50-bcfe-f0a43689ffaa) |
+
+| Formula Bot |
+> https://github.com/user-attachments/assets/fd9b4306-81b2-4487-86a7-156b4bc6b26c
 
 ---
 
