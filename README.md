@@ -109,7 +109,7 @@ DataSpark is a **premium SaaS platform** that transforms raw datasets into **for
 ## 💳 **Pricing**  
 
 DataSpark is a **FREE FOR NOW**.  
-👉 Visit our **[Website](#)** for subscription plans and enterprise solutions.  
+👉 Visit our **[https://data-spark.vercel.app/](#)** for subscription plans and enterprise solutions.  
 
 ---
 
