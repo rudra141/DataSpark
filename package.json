@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@opentelemetry/exporter-jaeger": "^2.0.1",
     "@clerk/nextjs": "^5.2.8",
     "@clerk/themes": "^2.1.11",
     "@hookform/resolvers": "^4.1.3",

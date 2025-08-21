@@ -39,30 +39,6 @@ const features = [
   },
 ];
 
-const testimonials = [
-  {
-    name: "Alex Johnson",
-    title: "Data Analyst",
-    avatar: "https://placehold.co/100x100.png",
-    dataAiHint: "man portrait",
-    quote: "DataSpark has saved me hours of frustration. I can finally focus on analysis instead of wrestling with complex syntax and chart setups.",
-  },
-  {
-    name: "Samantha Lee",
-    title: "Marketing Manager",
-    avatar: "https://placehold.co/100x100.png",
-    dataAiHint: "woman portrait",
-    quote: "As someone who isn't a spreadsheet wizard, DataSpark is a lifesaver. The chat and DIY features are incredibly powerful.",
-  },
-  {
-    name: "David Chen",
-    title: "Small Business Owner",
-    avatar: "https://placehold.co/100x100.png",
-    dataAiHint: "man smile",
-    quote: "I use this daily to manage my inventory and finances. It's like having a data expert on my team 24/7.",
-  },
-];
-
 const CTAButton = () => (
     <Button size="lg" className="shadow-lg shadow-primary/20" asChild>
         <Link href="/data-analyzer">
@@ -164,43 +140,6 @@ export default function HomePage() {
                         </Card>
                     </BackgroundGradient>
                 </Link>
-              </motion.div>
-            ))}
-          </div>
-        </motion.section>
-
-        {/* Testimonials Section */}
-        <motion.section
-          id="testimonials"
-          className="py-20 lg:py-24 container"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
-        >
-          <div className="text-center mb-12">
-            <h2 className="font-headline text-4xl font-bold">Trusted by Professionals</h2>
-            <p className="mt-4 text-lg text-muted-foreground">Don't just take our word for it.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <motion.div key={index}>
-                <BackgroundGradient className="rounded-[22px] p-4 sm:p-10 bg-zinc-900 h-full">
-                    <Card className="h-full flex flex-col justify-between bg-transparent border-none shadow-none text-white">
-                    <CardContent className="pt-6">
-                        <p className="italic">"{testimonial.quote}"</p>
-                    </CardContent>
-                    <CardHeader className="flex-row items-center gap-4">
-                        <Avatar>
-                        <AvatarImage src={testimonial.avatar} alt={testimonial.name} data-ai-hint={testimonial.dataAiHint}/>
-                        <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                        <p className="font-semibold">{testimonial.name}</p>
-                        <p className="text-sm text-neutral-400">{testimonial.title}</p>
-                        </div>
-                    </CardHeader>
-                    </Card>
-                </BackgroundGradient>
               </motion.div>
             ))}
           </div>

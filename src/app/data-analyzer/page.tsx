@@ -15,6 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AppLayout } from '@/components/layout/app-layout';
 import { BackgroundGradient } from '@/components/ui/aceternity/background-gradient';
+import { Badge } from '@/components/ui/badge';
 
 type AnalysisResult = AnalyzeDataOutput;
 type RecommendedVisualization = AnalysisResult['recommendedVisualizations'][0];
@@ -359,9 +360,10 @@ export default function DataAnalyzerPage() {
             <h1 className="text-3xl font-bold flex items-center gap-3">
               <BarChartIcon className="h-8 w-8 text-primary" />
               Data Analyzer
+              <Badge variant="outline">Beta</Badge>
             </h1>
             <p className="text-muted-foreground mt-2">
-              Upload a CSV or XLSX file to get instant insights, statistics, and AI-recommended visualizations.
+              Upload a CSV or XLSX file to get instant insights, statistics, and AI-recommended visualizations. This feature is in active development.
             </p>
           </header>
 
@@ -525,5 +527,3 @@ export default function DataAnalyzerPage() {
     </AppLayout>
   )
 }
-
-    
