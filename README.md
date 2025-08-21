@@ -124,7 +124,10 @@ DataSpark is a **FREE FOR NOW**.
 ## 🤝 **Support**  
 
 📩 Email: **rudraranjan26@gmail.com**  
-🌐 Website: **[https://dataspark.ai](#)**  
+
+💼 LinkedIn: **[https://www.linkedin.com/in/rudraranjan/](#)**  
+
+🐦 Twitter (X): **[https://x.com/Projects117749](#)** 
 
 ---
 
