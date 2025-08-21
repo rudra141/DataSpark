@@ -202,13 +202,13 @@ export default function HomePage() {
                     © {new Date().getFullYear()} DataSpark. All Rights Reserved.
                 </p>
                 <div className="flex items-center gap-4 mt-4 sm:mt-0">
-                    <Link href="https://github.com/your-username" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                    <Link href="https://github.com/rudra141" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
                         <Github className="h-6 w-6 text-muted-foreground hover:text-foreground transition-colors" />
                     </Link>
-                    <Link href="https://linkedin.com/in/your-username" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                    <Link href="https://www.linkedin.com/in/rudraranjan/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
                         <Linkedin className="h-6 w-6 text-muted-foreground hover:text-foreground transition-colors" />
                     </Link>
-                    <Link href="https://twitter.com/your-username" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+                    <Link href="https://x.com/Projects117749" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
                         <TwitterIcon className="h-6 w-6 text-muted-foreground hover:text-foreground transition-colors" />
                     </Link>
                 </div>
