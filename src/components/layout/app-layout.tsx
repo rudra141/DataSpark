@@ -98,9 +98,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                             </Button>
                         </SignedOut>
                         <SignedIn>
-                            <Button variant="outline" asChild>
-                                <Link href="/pricing">Pricing</Link>
-                            </Button>
                             <UserButton afterSignOutUrl="/" />
                         </SignedIn>
                     </div>

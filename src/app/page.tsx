@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowRight, Bot, BarChart, Calculator, Wand2, Sparkles } from "lucide-react";
+import { ArrowRight, Bot, BarChart, Calculator, Wand2, Sparkles, Github, Linkedin, Twitter as TwitterIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { BackgroundGradient } from "@/components/ui/aceternity/background-gradient";
 import { SignedIn, SignedOut, UserButton, SignUpButton, SignInButton } from "@clerk/nextjs";
@@ -42,7 +42,7 @@ const features = [
 const CTAButton = () => (
     <Link href="/formula">
         <GradientButton width="220px" height="60px">
-             Start free trial <ArrowRight className="ml-2 h-5 w-5" />
+             Get Started Free <ArrowRight className="ml-2 h-5 w-5" />
         </GradientButton>
     </Link>
 );
@@ -66,9 +66,6 @@ const Header = () => (
             </Button>
           </SignedOut>
           <SignedIn>
-              <Button variant="outline" asChild>
-                  <Link href="/pricing">Pricing</Link>
-              </Button>
               <UserButton afterSignOutUrl="/" />
           </SignedIn>
         </div>
@@ -189,7 +186,7 @@ export default function HomePage() {
             Ready to Simplify Your Data Workflow?
           </motion.h2>
           <motion.p className="mt-4 text-lg text-muted-foreground">
-            Boost your productivity and become a data pro today.
+            Get started for free. No credit card required.
           </motion.p>
           <motion.div className="mt-8">
             <CTAButton />
@@ -198,8 +195,28 @@ export default function HomePage() {
         </div>
       </main>
       
-      <footer className="container mx-auto p-8 text-center text-muted-foreground text-sm">
-        © {new Date().getFullYear()} DataSpark. All Rights Reserved.
+      <footer className="border-t border-border/40">
+        <div className="container mx-auto p-8 text-center">
+            <div className="flex flex-col sm:flex-row justify-between items-center">
+                <p className="text-muted-foreground text-sm">
+                    © {new Date().getFullYear()} DataSpark. All Rights Reserved.
+                </p>
+                <div className="flex items-center gap-4 mt-4 sm:mt-0">
+                    <Link href="https://github.com/your-username" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                        <Github className="h-6 w-6 text-muted-foreground hover:text-foreground transition-colors" />
+                    </Link>
+                    <Link href="https://linkedin.com/in/your-username" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                        <Linkedin className="h-6 w-6 text-muted-foreground hover:text-foreground transition-colors" />
+                    </Link>
+                    <Link href="https://twitter.com/your-username" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+                        <TwitterIcon className="h-6 w-6 text-muted-foreground hover:text-foreground transition-colors" />
+                    </Link>
+                </div>
+            </div>
+            <p className="text-sm text-muted-foreground mt-4">
+                Connect with us on social media!
+            </p>
+        </div>
       </footer>
     </div>
   );
