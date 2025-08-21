@@ -38,7 +38,7 @@ DataSpark is a **premium SaaS platform** that transforms raw datasets into **for
 
 | Auto-Generated Charts | Advanced Insights |
 |------------------------|-------------------|
-| ![DIY with data](https://github.com/user-attachments/assets/92b0c5f6-af32-4661-be09-2480859e85fb) | ![Data Analyzer](https://github.com/user-attachments/assets/281179b7-1152-452c-b907-864b8a9b2ee7) |
+| ![DIY with data](https://github.com/user-attachments/assets/92b0c5f6-af32-4661-be09-2480859e85fb) | > (https://github.com/user-attachments/assets/281179b7-1152-452c-b907-864b8a9b2ee7) |
 
 
 ---
