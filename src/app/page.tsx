@@ -115,7 +115,7 @@ export default function HomePage() {
                     transition={{ delay: 0.2, duration: 0.8 }}
                     className="font-headline text-6xl sm:text-7xl md:text-8xl font-extrabold tracking-tight text-white"
                 >
-                    Stop Guessing. <br /> Start Converting.
+                    Unlock the Power of Data
                 </motion.h1>
                 <motion.p
                     initial={{ opacity: 0, y: 20 }}
