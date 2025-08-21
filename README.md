@@ -30,7 +30,7 @@ DataSpark is a **premium SaaS platform** that transforms raw datasets into **for
 
 | Chat with data | Formula Bot |
 |--------------------|--------------------------|
-| ![Dashboard Screenshot](https://github.com/user-attachments/assets/ed8d0cf1-7387-4f50-bcfe-f0a43689ffaa) | ![Formula Bot](https://github.com/user-attachments/assets/fd9b4306-81b2-4487-86a7-156b4bc6b26c) |
+| ![Dashboard Screenshot](https://github.com/user-attachments/assets/ed8d0cf1-7387-4f50-bcfe-f0a43689ffaa) | ![Formula Bot](./screenshots/chat.png) |
 
 ---
 
@@ -38,7 +38,8 @@ DataSpark is a **premium SaaS platform** that transforms raw datasets into **for
 
 | Auto-Generated Charts | Advanced Insights |
 |------------------------|-------------------|
-| ![DIY with data](https://github.com/user-attachments/assets/92b0c5f6-af32-4661-be09-2480859e85fb) | > (https://github.com/user-attachments/assets/281179b7-1152-452c-b907-864b8a9b2ee7) |
+| ![DIY with data](https://github.com/user-attachments/assets/92b0c5f6-af32-4661-be09-2480859e85fb) | 
+> https://github.com/user-attachments/assets/281179b7-1152-452c-b907-864b8a9b2ee7 |
 
 
 ---
