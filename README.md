@@ -28,7 +28,7 @@ DataSpark is a **premium SaaS platform** that transforms raw datasets into **for
 
 ### 🔍 FEATURES DEMO **  
 
-|Data Analysis|
+| Data Analysis |
 |--------------|
 > https://github.com/user-attachments/assets/281179b7-1152-452c-b907-864b8a9b2ee7 
 
@@ -108,7 +108,7 @@ DataSpark is a **premium SaaS platform** that transforms raw datasets into **for
 
 ## 💳 **Pricing**  
 
-DataSpark is a **paid SaaS product**.  
+DataSpark is a **FREE FOR NOW**.  
 👉 Visit our **[Website](#)** for subscription plans and enterprise solutions.  
 
 ---
@@ -123,7 +123,7 @@ DataSpark is a **paid SaaS product**.
 
 ## 🤝 **Support**  
 
-📩 Email: **support@dataspark.ai**  
+📩 Email: **rudraranjan26@gmail.com**  
 🌐 Website: **[https://dataspark.ai](#)**  
 
 ---
