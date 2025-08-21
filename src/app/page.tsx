@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowRight, Bot, BarChart, Calculator, Wand2, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
-import { TextGenerateEffect } from "@/components/ui/aceternity/text-generate-effect";
 import { BackgroundGradient } from "@/components/ui/aceternity/background-gradient";
 import { SignedIn, SignedOut, UserButton, SignUpButton, SignInButton } from "@clerk/nextjs";
 
@@ -41,7 +40,7 @@ const features = [
 const CTAButton = () => (
     <Button size="lg" className="shadow-lg shadow-primary/20" asChild>
         <Link href="/data-analyzer">
-            Get Started for Free <ArrowRight className="ml-2 h-5 w-5" />
+            Start free trial <ArrowRight className="ml-2 h-5 w-5" />
         </Link>
     </Button>
 );
@@ -75,6 +74,25 @@ const Header = () => (
     </header>
 )
 
+const Starfield = () => (
+  <div className="absolute inset-0 z-0">
+    {[...Array(50)].map((_, i) => (
+      <div
+        key={i}
+        className="absolute bg-white rounded-full"
+        style={{
+          left: `${Math.random() * 100}%`,
+          top: `${Math.random() * 100}%`,
+          width: `${Math.random() * 2 + 1}px`,
+          height: `${Math.random() * 2 + 1}px`,
+          opacity: `${Math.random() * 0.5 + 0.2}`,
+        }}
+      />
+    ))}
+  </div>
+);
+
+
 export default function HomePage() {
   return (
     <div className="bg-background">
@@ -82,24 +100,35 @@ export default function HomePage() {
       <main>
         {/* Hero Section */}
         <div className="relative w-full bg-background h-auto py-52 md:py-72 overflow-hidden">
-            <div className="absolute inset-0 h-full w-full bg-gradient-to-br from-background to-primary/10"></div>
+            <Starfield />
             <div className="relative z-10 flex flex-col items-center justify-center text-center px-4">
-                <TextGenerateEffect
-                    words="UNLOCK THE POWER OF YOUR DATA"
-                    className="font-headline uppercase text-7xl sm:text-8xl md:text-9xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-red-500"
-                />
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8 }}
+                  className="mb-4"
+                >
+                </motion.div>
+                <motion.h1
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2, duration: 0.8 }}
+                    className="font-headline text-6xl sm:text-7xl md:text-8xl font-extrabold tracking-tight text-white"
+                >
+                    Stop Guessing. <br /> Start Converting.
+                </motion.h1>
                 <motion.p
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.5, duration: 0.8 }}
-                    className="mt-8 max-w-4xl mx-auto text-xl md:text-2xl text-neutral-300"
+                    transition={{ delay: 0.5, duration: 0.8 }}
+                    className="mt-8 max-w-2xl mx-auto text-xl md:text-2xl text-neutral-300"
                 >
-                    Generate formulas, analyze datasets, and build custom charts in plain English. Stop wrestling with data and start getting answers.
+                    DataSpark uses AI to craft formulas, analyze data, and build charts that actually drive decisions. Supercharge your workflow in minutes.
                 </motion.p>
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 2, duration: 0.8 }}
+                    transition={{ delay: 0.8, duration: 0.8 }}
                     className="mt-12"
                 >
                     <CTAButton />
