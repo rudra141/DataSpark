@@ -32,6 +32,9 @@ h1, h2, h3, h4, h5, h6 {
     --input: 240 3.7% 15.9%;
     --ring: 262.1 83.3% 57.8%;
     --radius: 0.5rem;
+
+    --color-background: hsl(var(--background));
+    --color-text: hsl(var(--foreground));
   }
 }
 
@@ -42,4 +45,22 @@ h1, h2, h3, h4, h5, h6 {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@property --r {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes rotate {
+  to {
+    --r: 360deg;
+  }
+}
+
+.rotatingGradient {
+    --r: 0deg;
+    background: conic-gradient(from var(--r) at 50% 50%, #7b61ff, #ffc414, #1ca0fb, #00ccb1, #7b61ff);
+    animation: rotate 2s linear infinite;
 }

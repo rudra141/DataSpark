@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { BackgroundGradient } from "@/components/ui/aceternity/background-gradient";
 import { SignedIn, SignedOut, UserButton, SignUpButton, SignInButton } from "@clerk/nextjs";
 import { Typewriter } from "@/components/ui/typewriter-text";
+import GradientButton from "@/components/ui/button-1";
 
 const features = [
   {
@@ -39,11 +40,11 @@ const features = [
 ];
 
 const CTAButton = () => (
-    <Button size="lg" className="shadow-lg shadow-primary/20" asChild>
-        <Link href="/formula">
-            Start free trial <ArrowRight className="ml-2 h-5 w-5" />
-        </Link>
-    </Button>
+    <Link href="/formula">
+        <GradientButton width="220px" height="60px">
+             Start free trial <ArrowRight className="ml-2 h-5 w-5" />
+        </GradientButton>
+    </Link>
 );
 
 const Header = () => (
